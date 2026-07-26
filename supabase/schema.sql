@@ -1,9 +1,9 @@
 -- =============================================================
--- ESQUEMA DE BASE DE DATOS SUPABASE: MIS CERTIFICADOS
+-- ESQUEMA DE BASE DE DATOS SUPABASE: MIS CERTIFICADOS (v2.1 CLEAN)
 -- PROYECTO: Mis Certificados (Ecosistema Quinto)
 -- =============================================================
 
--- 1. Habilitar extensión criptográfica para Hashes SHA-256
+-- 1. Habilitar extension criptografica para Hashes SHA-256
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- 2. TABLA DE PERFILES (Vinculada a auth.users de Supabase)
@@ -25,12 +25,12 @@ CREATE TABLE IF NOT EXISTS public.courses (
     instructor_name TEXT NOT NULL,
     price_usd NUMERIC(10,2) NOT NULL DEFAULT 0.00,
     image_url TEXT,
-    category TEXT NOT NULL DEFAULT 'Capacitación',
+    category TEXT NOT NULL DEFAULT 'Capacitacion',
     is_active BOOLEAN DEFAULT true,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 4. TABLA DE COMPROBANTES DE PAGO (OCR Vision & Deduplicación)
+-- 4. TABLA DE COMPROBANTES DE PAGO (OCR Vision & Deduplicacion)
 CREATE TABLE IF NOT EXISTS public.payment_receipts (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     student_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
@@ -38,8 +38,8 @@ CREATE TABLE IF NOT EXISTS public.payment_receipts (
     course_id UUID REFERENCES public.courses(id) ON DELETE SET NULL,
     course_title TEXT NOT NULL,
     receipt_image_url TEXT NOT NULL,
-    receipt_hash VARCHAR(64) UNIQUE NOT NULL, -- Anti-duplicados por foto
-    extracted_op_code VARCHAR(100) UNIQUE,     -- Anti-duplicados por Nº Operación OCR
+    receipt_hash VARCHAR(64) UNIQUE NOT NULL,
+    extracted_op_code VARCHAR(100) UNIQUE,
     extracted_amount NUMERIC(10,2),
     extracted_date TEXT,
     extracted_sender TEXT,
@@ -55,13 +55,13 @@ CREATE TABLE IF NOT EXISTS public.certificates (
     course_title TEXT NOT NULL,
     academic_hours INT NOT NULL,
     instructor_name TEXT NOT NULL,
-    hash_sha256 VARCHAR(64) UNIQUE NOT NULL, -- Sello Criptográfico QR
+    hash_sha256 VARCHAR(64) UNIQUE NOT NULL,
     qr_code_url TEXT NOT NULL,
     issued_at TEXT NOT NULL,
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
--- 6. TABLA DE LOGÍSTICA "A TU PUERTA" (Física GPS)
+-- 6. TABLA DE LOGISTICA A TU PUERTA (Fisica GPS)
 CREATE TABLE IF NOT EXISTS public.deliveries_future (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     certificate_id UUID REFERENCES public.certificates(id) ON DELETE CASCADE,
@@ -87,7 +87,7 @@ CREATE TABLE IF NOT EXISTS public.certificate_templates (
 );
 
 -- =============================================================
--- POLÍTICAS DE SEGURIDAD EN BASE DE DATOS (ROW LEVEL SECURITY)
+-- HABILITAR ROW LEVEL SECURITY (RLS)
 -- =============================================================
 
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
@@ -97,39 +97,44 @@ ALTER TABLE public.certificates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.deliveries_future ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.certificate_templates ENABLE ROW LEVEL SECURITY;
 
--- Acceso Público a Lectura de Cursos y Verificación de Certificados
-CREATE POLICY "Cursos lectura pública" ON public.courses FOR SELECT USING (true);
-CREATE POLICY "Validación pública de certificados por Hash" ON public.certificates FOR SELECT USING (true);
+-- ELIMINAR POLITICAS PREVIAS SI EXISTIAN (Evita errores de ejecucion duplicada)
+DROP POLICY IF EXISTS "Cursos lectura publica" ON public.courses;
+DROP POLICY IF EXISTS "Validacion publica de certificados por Hash" ON public.certificates;
+DROP POLICY IF EXISTS "Estudiantes ven sus comprobantes" ON public.payment_receipts;
+DROP POLICY IF EXISTS "Admin acceso total comprobantes" ON public.payment_receipts;
 
--- Estudiantes ven sus propios datos
+-- CREAR POLITICAS DE SEGURIDAD
+CREATE POLICY "Cursos lectura publica" ON public.courses FOR SELECT USING (true);
+CREATE POLICY "Validacion publica de certificados por Hash" ON public.certificates FOR SELECT USING (true);
 CREATE POLICY "Estudiantes ven sus comprobantes" ON public.payment_receipts FOR SELECT USING (auth.uid() = student_id);
-
--- Admins acceso total
 CREATE POLICY "Admin acceso total comprobantes" ON public.payment_receipts FOR ALL USING (
     EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
 );
 
+-- =============================================================
 -- SEED DATA DE LOS 2 CURSOS VIGENTES DE QUINTO
+-- =============================================================
+
 INSERT INTO public.courses (id, title, description, academic_hours, instructor_name, price_usd, image_url, category)
 VALUES 
 (
     'a1b2c3d4-0001-0000-0000-000000000001',
     'Curso Adulto Mayor',
-    'Programa oficial de capacitación en Cuidado, Acompañamiento e Intervención Integral del Adulto Mayor.',
+    'Programa oficial de capacitacion en Cuidado, Acompanamiento e Intervencion Integral del Adulto Mayor.',
     60,
     'Equipo Especializado Quinto Eje',
     45.00,
     'https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?w=600',
-    'Salud & Cuidado'
+    'Salud y Cuidado'
 ),
 (
     'a1b2c3d4-0002-0000-0000-000000000002',
     'Servicios de Quinto Eje',
-    'Formación profesional en Gestión Estratégica, Operaciones de Campo y Desarrollo de Proyectos Quinto Eje.',
+    'Formacion profesional en Gestion Estrategica, Operaciones de Campo y Desarrollo de Proyectos Quinto Eje.',
     40,
     'Directorio Ejecutivo Quinto',
     50.00,
     'https://images.unsplash.com/photo-1552664730-d307ca884978?w=600',
-    'Estrategia & Operaciones'
+    'Estrategia y Operaciones'
 )
 ON CONFLICT DO NOTHING;
