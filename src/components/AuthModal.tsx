@@ -19,42 +19,26 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  // 1-Click Google OAuth Sign In & Registration Protocol
+  // Estándar de Autenticación Google OAuth 2.0 / PKCE Protocol
   const handleGoogleSignIn = async () => {
     setLoading(true);
     setErrorMsg('');
     try {
       const currentOrigin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
-
-      console.log('Iniciando OAuth con Google. Redirect URL:', currentOrigin);
+      const redirectUrl = `${currentOrigin}/auth/callback`;
 
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: currentOrigin,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent'
-          }
+          redirectTo: redirectUrl
         }
       });
 
       if (error) {
-        console.error('Supabase OAuth error:', error);
-        setErrorMsg(`Error de Google Auth: ${error.message}`);
-        setLoading(false);
-        return;
-      }
-
-      if (data?.url) {
-        console.log('Redirigiendo explícitamente a:', data.url);
-        window.location.href = data.url;
-      } else {
-        setErrorMsg('No se recibió la URL de redirección de Google. Revisa la configuración del proveedor Google en Supabase.');
+        setErrorMsg(`Error en Autenticación Google: ${error.message}`);
         setLoading(false);
       }
     } catch (err: any) {
-      console.error('OAuth Exception:', err);
       setErrorMsg(`Excepción en Google Auth: ${err.message || 'Error desconocido'}`);
       setLoading(false);
     }
