@@ -38,17 +38,30 @@ export default function Home() {
     }
     initData();
 
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    const updateSessionState = (session: any) => {
       if (session?.user) {
-        const role = (session.user.user_metadata?.role as UserRole) || (session.user.email?.includes('admin') ? 'admin' : 'student');
-        setUserProfile({
-          email: session.user.email || '',
-          name: session.user.user_metadata?.full_name || session.user.email?.split('@')[0] || 'Usuario',
-          role: role
-        });
+        const email = session.user.email || '';
+        const role = (session.user.user_metadata?.role as UserRole) || (email.toLowerCase().includes('admin') ? 'admin' : 'student');
+        const name = session.user.user_metadata?.full_name || session.user.user_metadata?.name || email.split('@')[0] || 'Estudiante Quinto';
+        setUserProfile({ email, name, role });
         setUserRole(role);
+      } else {
+        setUserProfile(null);
+        setUserRole('student');
       }
+    };
+
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      updateSessionState(session);
     });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      updateSessionState(session);
+    });
+
+    return () => {
+      subscription.unsubscribe();
+    };
   }, []);
 
   const handleAuthSuccess = (profile: { email: string; name: string; role: UserRole }) => {
@@ -67,121 +80,119 @@ export default function Home() {
     setCurrentTab('courses');
   };
 
-  const handleAddReceipt = async (newReceipt: PaymentReceipt) => {
-    setReceipts((prev) => [newReceipt, ...prev]);
-    await saveReceiptToDB(newReceipt);
-    alert('¡Comprobante leído por la IA y enviado a la Cola de Aprobaciones del Administrador!');
+  const handleCreateReceipt = async (receipt: PaymentReceipt) => {
+    const newReceipts = [receipt, ...receipts];
+    setReceipts(newReceipts);
+    await saveReceiptToDB(receipt);
   };
 
   const handleApproveReceipt = async (receipt: PaymentReceipt) => {
-    setReceipts((prev) =>
-      prev.map((r) => (r.id === receipt.id ? { ...r, admin_approval_status: 'approved' } : r))
+    const updatedReceipts = receipts.map((r) =>
+      r.id === receipt.id ? { ...r, admin_approval_status: 'approved' as const } : r
     );
-
+    setReceipts(updatedReceipts);
     await updateReceiptStatusInDB(receipt.id, 'approved');
 
+    const courseObj = courses.find((c) => c.title === receipt.course_title) || courses[0];
     const newCert: Certificate = {
       id: 'cert-' + Date.now(),
       enrollment_id: 'enr-' + Date.now(),
       student_name: receipt.student_name,
       course_title: receipt.course_title,
-      academic_hours: 50,
-      instructor_name: 'Directorio Quinto Eje',
+      academic_hours: courseObj ? courseObj.academic_hours : 40,
+      instructor_name: courseObj ? courseObj.instructor_name : 'Directorio Quinto',
       hash_sha256: receipt.receipt_hash,
       qr_code_url: `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://miscertificados.quinto.app/validar/${receipt.receipt_hash}`,
       issued_at: new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
     };
 
-    setCertificates((prev) => [newCert, ...prev]);
+    const newCertificates = [newCert, ...certificates];
+    setCertificates(newCertificates);
     await saveCertificateToDB(newCert);
 
-    sendStudentReleaseNotification(newCert);
+    sendStudentReleaseNotification(newCert, '+51 987654321', 'alumno@quinto.app');
 
-    alert(`¡Pago APROBADO (OK)!
-
-1. Certificado liberado exitosamente.
-2. Alerta de WhatsApp enviada al alumno.`);
+    alert(`¡Certificado para ${receipt.student_name} emitido exitosamente! Se envió la alerta por WhatsApp.`);
   };
 
   const handleRejectReceipt = async (receiptId: string) => {
-    setReceipts((prev) =>
-      prev.map((r) => (r.id === receiptId ? { ...r, admin_approval_status: 'rejected' } : r))
+    const updatedReceipts = receipts.map((r) =>
+      r.id === receiptId ? { ...r, admin_approval_status: 'rejected' as const } : r
     );
+    setReceipts(updatedReceipts);
     await updateReceiptStatusInDB(receiptId, 'rejected');
   };
 
+  const handleUpdateCourses = (updatedCourses: Course[]) => {
+    setCourses(updatedCourses);
+  };
+
   const handleUpdateCertificate = (updatedCert: Certificate) => {
-    setCertificates((prev) =>
-      prev.map((c) => (c.id === updatedCert.id ? updatedCert : c))
-    );
+    const updated = certificates.map((c) => (c.id === updatedCert.id ? updatedCert : c));
+    setCertificates(updated);
   };
 
   const handleDeleteCertificate = (certId: string) => {
-    setCertificates((prev) => prev.filter((c) => c.id !== certId));
+    setCertificates(certificates.filter((c) => c.id !== certId));
   };
 
-  const handleAddDelivery = (deliveryRecord: any) => {
-    setDeliveries((prev) => [deliveryRecord, ...prev]);
-    alert('¡Solicitud de despacho a domicilio "A Tu Puerta" registrada en el sistema logístico!');
-  };
-
-  const handleTriggerVerify = (hash: string) => {
-    setVerifyHash(hash);
-    setCurrentTab('verify');
+  const handleRequestPhysicalDelivery = (deliveryInfo: any) => {
+    setDeliveries([...deliveries, deliveryInfo]);
   };
 
   return (
-    <div className="min-h-screen bg-[#0b0f19] text-slate-100 flex flex-col justify-between">
-      <div>
-        <Navbar
-          currentTab={currentTab}
-          setCurrentTab={setCurrentTab}
-          userRole={userRole}
-          setUserRole={setUserRole}
-          userProfile={userProfile}
-          onOpenAuth={() => setShowAuthModal(true)}
-          onLogout={handleLogout}
-        />
+    <main className="min-h-screen bg-slate-950 text-slate-100 selection:bg-cyan-500 selection:text-white font-sans antialiased">
+      <Navbar
+        currentTab={currentTab}
+        setCurrentTab={setCurrentTab}
+        userRole={userRole}
+        setUserRole={setUserRole}
+        userProfile={userProfile}
+        onOpenAuth={() => setShowAuthModal(true)}
+        onLogout={handleLogout}
+      />
 
-        <main className="max-w-7xl mx-auto p-6 md:p-8">
-          {currentTab === 'courses' && (
-            <StudentCourses
-              paymentQrUrl={systemSettings.payment_qr_url}
-              onAddReceipt={handleAddReceipt}
-            />
-          )}
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {currentTab === 'courses' && (
+          <StudentCourses
+            paymentQrUrl={systemSettings.payment_qr_url}
+            onAddReceipt={handleCreateReceipt}
+          />
+        )}
 
-          {currentTab === 'certificates' && (
-            <CertificateViewer
-              certificates={certificates}
-              onVerifyHash={handleTriggerVerify}
-              onAddDelivery={handleAddDelivery}
-            />
-          )}
+        {currentTab === 'my-certificates' && (
+          <CertificateViewer
+            certificates={certificates}
+            onVerifyHash={(hash) => {
+              setVerifyHash(hash);
+              setCurrentTab('verify');
+            }}
+            onAddDelivery={handleRequestPhysicalDelivery}
+          />
+        )}
 
-          {currentTab === 'admin' && (
-            <AdminDashboard
-              courses={courses}
-              receipts={receipts}
-              certificates={certificates}
-              deliveries={deliveries}
-              systemSettings={systemSettings}
-              onUpdateCourses={setCourses}
-              onApproveReceipt={handleApproveReceipt}
-              onRejectReceipt={handleRejectReceipt}
-              onUpdateCertificate={handleUpdateCertificate}
-              onDeleteCertificate={handleDeleteCertificate}
-              onUpdateSettings={setSystemSettings}
-            />
-          )}
+        {currentTab === 'admin' && userRole === 'admin' && (
+          <AdminDashboard
+            courses={courses}
+            receipts={receipts}
+            certificates={certificates}
+            deliveries={deliveries}
+            systemSettings={systemSettings}
+            onUpdateCourses={handleUpdateCourses}
+            onApproveReceipt={handleApproveReceipt}
+            onRejectReceipt={handleRejectReceipt}
+            onUpdateCertificate={handleUpdateCertificate}
+            onDeleteCertificate={handleDeleteCertificate}
+            onUpdateSettings={setSystemSettings}
+          />
+        )}
 
-          {currentTab === 'verify' && (
-            <PublicVerification
-              certificates={certificates}
-              initialHash={verifyHash}
-            />
-          )}
-        </main>
+        {currentTab === 'verify' && (
+          <PublicVerification
+            certificates={certificates}
+            initialHash={verifyHash}
+          />
+        )}
       </div>
 
       {showAuthModal && (
@@ -190,10 +201,6 @@ export default function Home() {
           onSuccess={handleAuthSuccess}
         />
       )}
-
-      <footer className="w-full border-t border-slate-800/80 py-6 text-center text-xs text-slate-500">
-        <p>© 2026 Mis Certificados — Subsistema Oficial del Ecosistema Quinto. Todos los derechos reservados.</p>
-      </footer>
-    </div>
+    </main>
   );
 }
