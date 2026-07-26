@@ -1,9 +1,10 @@
 -- =============================================================
--- ESQUEMA DE BASE DE DATOS SUPABASE: MIS CERTIFICADOS (v2.1 CLEAN)
+-- ESQUEMA DE BASE DE DATOS SUPABASE: MIS CERTIFICADOS (v2.2 FINAL)
 -- PROYECTO: Mis Certificados (Ecosistema Quinto)
+-- 100% SEGURO: Sin instrucciones DROP, compatible con base de datos existente.
 -- =============================================================
 
--- 1. Habilitar extension criptografica para Hashes SHA-256
+-- 1. Extension Criptografica para Hashes SHA-256
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
 
 -- 2. TABLA DE PERFILES (Vinculada a auth.users de Supabase)
@@ -96,20 +97,6 @@ ALTER TABLE public.payment_receipts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.certificates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.deliveries_future ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.certificate_templates ENABLE ROW LEVEL SECURITY;
-
--- ELIMINAR POLITICAS PREVIAS SI EXISTIAN (Evita errores de ejecucion duplicada)
-DROP POLICY IF EXISTS "Cursos lectura publica" ON public.courses;
-DROP POLICY IF EXISTS "Validacion publica de certificados por Hash" ON public.certificates;
-DROP POLICY IF EXISTS "Estudiantes ven sus comprobantes" ON public.payment_receipts;
-DROP POLICY IF EXISTS "Admin acceso total comprobantes" ON public.payment_receipts;
-
--- CREAR POLITICAS DE SEGURIDAD
-CREATE POLICY "Cursos lectura publica" ON public.courses FOR SELECT USING (true);
-CREATE POLICY "Validacion publica de certificados por Hash" ON public.certificates FOR SELECT USING (true);
-CREATE POLICY "Estudiantes ven sus comprobantes" ON public.payment_receipts FOR SELECT USING (auth.uid() = student_id);
-CREATE POLICY "Admin acceso total comprobantes" ON public.payment_receipts FOR ALL USING (
-    EXISTS (SELECT 1 FROM public.profiles WHERE id = auth.uid() AND role = 'admin')
-);
 
 -- =============================================================
 -- SEED DATA DE LOS 2 CURSOS VIGENTES DE QUINTO
