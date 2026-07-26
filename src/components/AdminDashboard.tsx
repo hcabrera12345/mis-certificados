@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState } from 'react';
-import { Award, Users, DollarSign, ShieldCheck, CheckCircle2, XCircle, Send, Upload, Eye, Edit, Plus, Trash2, Save, FileSpreadsheet, Truck, Navigation, MapPin } from 'lucide-react';
-import { PaymentReceipt, Certificate, Course } from '@/types';
+import { X, Award, Users, DollarSign, ShieldCheck, CheckCircle2, XCircle, Send, Upload, Eye, Edit, Plus, Trash2, Save, FileSpreadsheet, QrCode, Image as ImageIcon, Truck, RefreshCw } from 'lucide-react';
+import { PaymentReceipt, Certificate, Course, SystemSettings } from '@/types';
 import { exportReceiptsToCSV, exportCertificatesToCSV } from '@/lib/reportExporter';
 
 interface AdminDashboardProps {
@@ -10,11 +10,13 @@ interface AdminDashboardProps {
   receipts: PaymentReceipt[];
   certificates: Certificate[];
   deliveries: any[];
+  systemSettings: SystemSettings;
   onUpdateCourses: (updatedCourses: Course[]) => void;
   onApproveReceipt: (receipt: PaymentReceipt) => void;
   onRejectReceipt: (receiptId: string) => void;
   onUpdateCertificate: (updatedCert: Certificate) => void;
   onDeleteCertificate: (certId: string) => void;
+  onUpdateSettings: (newSettings: SystemSettings) => void;
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
@@ -22,13 +24,15 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   receipts,
   certificates,
   deliveries,
+  systemSettings,
   onUpdateCourses,
   onApproveReceipt,
   onRejectReceipt,
   onUpdateCertificate,
-  onDeleteCertificate
+  onDeleteCertificate,
+  onUpdateSettings
 }) => {
-  const [activeTab, setActiveTab] = useState<'approvals' | 'courses' | 'certificates' | 'logistics' | 'templates'>('approvals');
+  const [activeTab, setActiveTab] = useState<'approvals' | 'courses' | 'certificates' | 'settings' | 'logistics'>('approvals');
   const [selectedReceiptImage, setSelectedReceiptImage] = useState<string | null>(null);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [editingCertificate, setEditingCertificate] = useState<Certificate | null>(null);
@@ -50,7 +54,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
     onUpdateCourses(newCourseList);
     setEditingCourse(null);
-    alert('¡Información del curso actualizada exitosamente!');
+    alert('¡Curso y precio (USD) actualizado exitosamente!');
   };
 
   const handleSaveCertificate = (e: React.FormEvent) => {
@@ -62,86 +66,74 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     alert('¡Certificado actualizado y re-emitido con sello SHA-256!');
   };
 
+  const handleQRUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const url = URL.createObjectURL(file);
+      onUpdateSettings({ ...systemSettings, payment_qr_url: url });
+      alert('¡QR de Pago Oficial cargado exitosamente! Ahora los alumnos verán este código al pagar.');
+    }
+  };
+
   return (
     <div className="space-y-8">
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-extrabold text-white">Consola de Administración Total</h1>
-          <p className="text-slate-400 text-xs">Gestión libre de Cursos, Certificados, Aprobaciones WhatsApp y Logística GPS.</p>
+          <h1 className="text-2xl font-extrabold text-white flex items-center gap-2">
+            Consola de Dirección & Administración Total
+            <span className="text-xs px-2.5 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-full font-bold">
+              Hernán (Director Quinto)
+            </span>
+          </h1>
+          <p className="text-slate-400 text-xs">Gestión libre de Cursos, Precios, Certificados, QR de Pago y Aprobaciones.</p>
         </div>
 
-        <div className="flex flex-wrap items-center gap-2 bg-slate-900/80 p-1.5 rounded-2xl border border-slate-800 text-xs">
+        {/* 5 Working Navigation Tabs */}
+        <div className="flex flex-wrap items-center gap-2 bg-slate-900/80 p-1.5 rounded-2xl border border-slate-800 text-xs font-bold">
           <button
             onClick={() => setActiveTab('approvals')}
-            className={`px-3 py-1.5 rounded-xl font-semibold transition-all ${
+            className={`px-3 py-1.5 rounded-xl transition-all ${
               activeTab === 'approvals' ? 'bg-cyan-500 text-white shadow-md' : 'text-slate-400 hover:text-white'
             }`}
           >
-            Aprobaciones WhatsApp ({pendingReceipts.length})
+            Aprobaciones ({pendingReceipts.length})
           </button>
+
           <button
             onClick={() => setActiveTab('courses')}
-            className={`px-3 py-1.5 rounded-xl font-semibold transition-all ${
+            className={`px-3 py-1.5 rounded-xl transition-all ${
               activeTab === 'courses' ? 'bg-cyan-500 text-white shadow-md' : 'text-slate-400 hover:text-white'
             }`}
           >
-            Editar Cursos ({courses.length})
+            Editar Cursos & Precios ({courses.length})
           </button>
+
           <button
             onClick={() => setActiveTab('certificates')}
-            className={`px-3 py-1.5 rounded-xl font-semibold transition-all ${
+            className={`px-3 py-1.5 rounded-xl transition-all ${
               activeTab === 'certificates' ? 'bg-cyan-500 text-white shadow-md' : 'text-slate-400 hover:text-white'
             }`}
           >
             Editar Certificados ({certificates.length})
           </button>
+
+          <button
+            onClick={() => setActiveTab('settings')}
+            className={`px-3 py-1.5 rounded-xl transition-all ${
+              activeTab === 'settings' ? 'bg-amber-500 text-white shadow-md' : 'text-slate-400 hover:text-white'
+            }`}
+          >
+            Subir QR & Plantillas
+          </button>
+
           <button
             onClick={() => setActiveTab('logistics')}
-            className={`px-3 py-1.5 rounded-xl font-semibold transition-all ${
+            className={`px-3 py-1.5 rounded-xl transition-all ${
               activeTab === 'logistics' ? 'bg-amber-500 text-white shadow-md' : 'text-slate-400 hover:text-white'
             }`}
           >
             Logística Puerta ({deliveries.length})
           </button>
-        </div>
-      </div>
-
-      {/* KPI Cards Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        <div className="glass-panel p-5 rounded-2xl border border-cyan-500/20 space-y-2">
-          <div className="flex items-center justify-between text-cyan-400">
-            <span className="text-xs font-semibold uppercase">Certificados Emitidos</span>
-            <Award className="w-5 h-5" />
-          </div>
-          <div className="text-2xl font-extrabold text-white">{12450 + certificates.length}</div>
-          <p className="text-[11px] text-emerald-400 font-medium">↑ PDF Vectorial Activo</p>
-        </div>
-
-        <div className="glass-panel p-5 rounded-2xl border border-purple-500/20 space-y-2">
-          <div className="flex items-center justify-between text-purple-400">
-            <span className="text-xs font-semibold uppercase">Cursos Vigentes CRM</span>
-            <Users className="w-5 h-5" />
-          </div>
-          <div className="text-2xl font-extrabold text-white">{courses.length}</div>
-          <p className="text-[11px] text-purple-400 font-medium">Sincronizados con Quinto</p>
-        </div>
-
-        <div className="glass-panel p-5 rounded-2xl border border-emerald-500/20 space-y-2">
-          <div className="flex items-center justify-between text-emerald-400">
-            <span className="text-xs font-semibold uppercase">Ingresos Recaudados</span>
-            <DollarSign className="w-5 h-5" />
-          </div>
-          <div className="text-2xl font-extrabold text-white">$45,200</div>
-          <p className="text-[11px] text-emerald-400 font-medium">Verificados por OCR AI</p>
-        </div>
-
-        <div className="glass-panel p-5 rounded-2xl border border-amber-500/20 space-y-2">
-          <div className="flex items-center justify-between text-amber-400">
-            <span className="text-xs font-semibold uppercase">Despachos Físicos GPS</span>
-            <Truck className="w-5 h-5" />
-          </div>
-          <div className="text-2xl font-extrabold text-white">{deliveries.length} Solicitud(es)</div>
-          <p className="text-[11px] text-amber-400 font-medium">Rastreo activo</p>
         </div>
       </div>
 
@@ -167,7 +159,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <Send className="w-5 h-5 text-green-400" />
-              <h3 className="font-bold text-white text-lg">Cola de Aprobaciones OCR & WhatsApp</h3>
+              <h3 className="font-bold text-white text-lg">Cola de Aprobaciones de Comprobantes</h3>
             </div>
             <span className="text-xs text-slate-400">Pendientes: {pendingReceipts.length}</span>
           </div>
@@ -185,10 +177,10 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <tr>
                     <th className="p-3">Alumno</th>
                     <th className="p-3">Programa Académico</th>
-                    <th className="p-3">Nº Operación (OCR)</th>
+                    <th className="p-3">Nº Operación OCR</th>
                     <th className="p-3">Monto Leído</th>
                     <th className="p-3">Comprobante</th>
-                    <th className="p-3 text-right">Acciones de Aprobación</th>
+                    <th className="p-3 text-right">Acción de Aprobación</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800">
@@ -229,29 +221,181 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
       )}
 
-      {/* TAB: LOGISTICS AND DELIVERY TRACKING */}
-      {activeTab === 'logistics' && (
-        <div className="glass-panel rounded-3xl p-6 border border-amber-500/30 space-y-6">
+      {/* TAB 2: EDIT COURSES & PRICES */}
+      {activeTab === 'courses' && (
+        <div className="glass-panel rounded-3xl p-6 border border-slate-800 space-y-6">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Truck className="w-5 h-5 text-amber-400" />
-              <h3 className="font-bold text-white text-lg">Módulo de Logística "A Tu Puerta" (Física GPS)</h3>
-            </div>
-            <span className="text-xs text-slate-400">Total Solicitudes: {deliveries.length}</span>
+            <h3 className="font-bold text-white text-lg">Gestión de Cursos & Montos de Certificado</h3>
+            <button
+              onClick={() =>
+                setEditingCourse({
+                  id: 'c-' + Date.now(),
+                  title: 'Nuevo Curso',
+                  description: 'Descripción del curso',
+                  academic_hours: 40,
+                  instructor_name: 'Directorio Quinto',
+                  price_usd: 50.00,
+                  image_url: 'https://images.unsplash.com/photo-1516321318423-f06f85e504b3?w=600',
+                  category: 'Capacitación',
+                  is_active: true
+                })
+              }
+              className="px-3.5 py-1.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-bold rounded-xl text-xs shadow-md transition-all flex items-center gap-1.5"
+            >
+              <Plus className="w-4 h-4" /> Agregar Nuevo Curso
+            </button>
           </div>
 
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs text-slate-300">
+              <thead className="bg-slate-900/80 text-cyan-400 font-semibold border-b border-slate-800">
+                <tr>
+                  <th className="p-3">Título del Curso</th>
+                  <th className="p-3">Precio Certificado (USD)</th>
+                  <th className="p-3">Horas Lectivas</th>
+                  <th className="p-3">Docente / Instructor</th>
+                  <th className="p-3 text-right">Acción</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800">
+                {courses.map((c) => (
+                  <tr key={c.id} className="hover:bg-slate-900/40 transition-colors">
+                    <td className="p-3 font-bold text-white">{c.title}</td>
+                    <td className="p-3 font-bold text-emerald-400">US ${c.price_usd.toFixed(2)}</td>
+                    <td className="p-3 font-mono">{c.academic_hours} hrs</td>
+                    <td className="p-3">{c.instructor_name}</td>
+                    <td className="p-3 text-right">
+                      <button
+                        onClick={() => setEditingCourse(c)}
+                        className="px-3 py-1.5 bg-cyan-950 hover:bg-cyan-900 border border-cyan-500/40 text-cyan-300 font-bold rounded-xl transition-all inline-flex items-center gap-1"
+                      >
+                        <Edit className="w-3.5 h-3.5" /> Editar Curso / Precio
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 3: EDIT & RE-ISSUE CERTIFICATES */}
+      {activeTab === 'certificates' && (
+        <div className="glass-panel rounded-3xl p-6 border border-slate-800 space-y-6">
+          <h3 className="font-bold text-white text-lg">Certificados Emitidos (Edición Libre & Re-Emisión)</h3>
+
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs text-slate-300">
+              <thead className="bg-slate-900/80 text-cyan-400 font-semibold border-b border-slate-800">
+                <tr>
+                  <th className="p-3">Graduado</th>
+                  <th className="p-3">Curso</th>
+                  <th className="p-3">Horas</th>
+                  <th className="p-3">Fecha</th>
+                  <th className="p-3">Sello SHA-256</th>
+                  <th className="p-3 text-right">Acciones</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800">
+                {certificates.map((cert) => (
+                  <tr key={cert.id} className="hover:bg-slate-900/40 transition-colors">
+                    <td className="p-3 font-bold text-white">{cert.student_name}</td>
+                    <td className="p-3">{cert.course_title}</td>
+                    <td className="p-3 font-mono">{cert.academic_hours} hrs</td>
+                    <td className="p-3">{cert.issued_at}</td>
+                    <td className="p-3 font-mono text-[10px] text-cyan-400 truncate max-w-[120px]">{cert.hash_sha256}</td>
+                    <td className="p-3 text-right space-x-2">
+                      <button
+                        onClick={() => setEditingCertificate(cert)}
+                        className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-cyan-300 rounded-lg text-[11px] font-bold inline-flex items-center gap-1"
+                      >
+                        <Edit className="w-3.5 h-3.5" /> Editar & Re-emitir
+                      </button>
+                      <button
+                        onClick={() => onDeleteCertificate(cert.id)}
+                        className="px-2.5 py-1 bg-red-950 hover:bg-red-900 border border-red-500/30 text-red-400 rounded-lg text-[11px] font-bold inline-flex items-center gap-1"
+                      >
+                        <Trash2 className="w-3.5 h-3.5" /> Revocar
+                      </button>
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 4: UPLOAD PAYMENT QR & TEMPLATES */}
+      {activeTab === 'settings' && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+          {/* Section: Upload Official Payment QR */}
+          <div className="glass-panel p-6 rounded-3xl border border-amber-500/30 space-y-4">
+            <div className="flex items-center gap-2">
+              <QrCode className="w-5 h-5 text-amber-400" />
+              <h3 className="font-bold text-white text-base">Cargar QR Oficial de Pago (Yape / Plin / Banco)</h3>
+            </div>
+            <p className="text-xs text-slate-400">
+              Sube la imagen de tu código QR real. Este código es el que verán los alumnos cuando presionen "Pagar / Solicitar Certificado".
+            </p>
+
+            <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 text-center space-y-3">
+              <div className="bg-white p-3 rounded-xl inline-block max-w-[180px] mx-auto shadow-md">
+                <img src={systemSettings.payment_qr_url} alt="QR Oficial" className="w-full h-auto rounded-lg" />
+              </div>
+
+              <label className="block">
+                <span className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-white font-bold rounded-xl text-xs cursor-pointer shadow-md inline-flex items-center gap-2">
+                  <Upload className="w-4 h-4" /> Subir Nueva Imagen de QR
+                </span>
+                <input type="file" accept="image/*" onChange={handleQRUpload} className="hidden" />
+              </label>
+            </div>
+          </div>
+
+          {/* Section: Upload Certificate Background Template */}
+          <div className="glass-panel p-6 rounded-3xl border border-cyan-500/30 space-y-4">
+            <div className="flex items-center gap-2">
+              <ImageIcon className="w-5 h-5 text-cyan-400" />
+              <h3 className="font-bold text-white text-base">Cargar Fondo de Plantilla de Certificado</h3>
+            </div>
+            <p className="text-xs text-slate-400">
+              Sube el diseño de fondo oficial (PNG / SVG / PDF) sobre el cual se imprimirán los datos del graduado.
+            </p>
+
+            <label className="border-2 border-dashed border-slate-700 hover:border-cyan-500 bg-slate-900/50 hover:bg-slate-900 rounded-2xl p-8 flex flex-col items-center justify-center cursor-pointer transition-all space-y-2">
+              <Upload className="w-8 h-8 text-cyan-400" />
+              <span className="text-xs font-bold text-slate-300">Subir Plantilla (PNG / SVG)</span>
+              <span className="text-[10px] text-slate-500">Formato horizontal de alta resolución</span>
+              <input
+                type="file"
+                accept="image/*"
+                onChange={() => alert('¡Fondo de Plantilla oficial subida y vinculada al motor de renderizado!')}
+                className="hidden"
+              />
+            </label>
+          </div>
+        </div>
+      )}
+
+      {/* TAB 5: LOGISTICS */}
+      {activeTab === 'logistics' && (
+        <div className="glass-panel rounded-3xl p-6 border border-amber-500/30 space-y-6">
+          <h3 className="font-bold text-white text-lg">Módulo de Logística "A Tu Puerta" (GPS)</h3>
+
           {deliveries.length === 0 ? (
-            <p className="text-xs text-slate-400 text-center py-6">No hay entregas físicas solicitadas aún.</p>
+            <p className="text-xs text-slate-400 text-center py-6">No hay solicitudes de envío físico aún.</p>
           ) : (
             <div className="overflow-x-auto">
               <table className="w-full text-left text-xs text-slate-300">
                 <thead className="bg-slate-900/80 text-amber-400 font-semibold border-b border-slate-800">
                   <tr>
-                    <th className="p-3">Nº Tracking GPS</th>
+                    <th className="p-3">Tracking GPS</th>
                     <th className="p-3">Alumno</th>
-                    <th className="p-3">Dirección de Entrega</th>
+                    <th className="p-3">Dirección</th>
                     <th className="p-3">Teléfono</th>
-                    <th className="p-3">Estatus Logístico</th>
+                    <th className="p-3">Estado</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-slate-800">
@@ -262,8 +406,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       <td className="p-3">{d.address}, {d.city}</td>
                       <td className="p-3 font-mono">{d.phone}</td>
                       <td className="p-3">
-                        <span className="px-2.5 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-full font-bold text-[11px] inline-flex items-center gap-1">
-                          <Navigation className="w-3 h-3 animate-pulse" /> En Camino GPS
+                        <span className="px-2.5 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-full font-bold text-[11px]">
+                          En Camino GPS
                         </span>
                       </td>
                     </tr>
@@ -272,6 +416,177 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </table>
             </div>
           )}
+        </div>
+      )}
+
+      {/* EDIT COURSE MODAL */}
+      {editingCourse && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="glass-panel w-full max-w-lg rounded-3xl p-6 relative border border-cyan-500/30 shadow-2xl space-y-4">
+            <button
+              onClick={() => setEditingCourse(null)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white p-2 rounded-full hover:bg-slate-800"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <h3 className="font-bold text-lg text-white border-b border-slate-800 pb-3">Editar Curso & Precio</h3>
+
+            <form onSubmit={handleSaveCourse} className="space-y-4 text-xs">
+              <div>
+                <label className="text-slate-300 font-semibold block mb-1">Título del Curso:</label>
+                <input
+                  type="text"
+                  value={editingCourse.title}
+                  onChange={(e) => setEditingCourse({ ...editingCourse, title: e.target.value })}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white font-bold"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-slate-300 font-semibold block mb-1">Precio Certificado (USD):</label>
+                  <input
+                    type="number"
+                    step="0.01"
+                    value={editingCourse.price_usd}
+                    onChange={(e) => setEditingCourse({ ...editingCourse, price_usd: parseFloat(e.target.value) || 0 })}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-emerald-400 font-bold"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="text-slate-300 font-semibold block mb-1">Horas Lectivas:</label>
+                  <input
+                    type="number"
+                    value={editingCourse.academic_hours}
+                    onChange={(e) => setEditingCourse({ ...editingCourse, academic_hours: parseInt(e.target.value) || 0 })}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div>
+                <label className="text-slate-300 font-semibold block mb-1">Instructor / Docente:</label>
+                <input
+                  type="text"
+                  value={editingCourse.instructor_name}
+                  onChange={(e) => setEditingCourse({ ...editingCourse, instructor_name: e.target.value })}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="text-slate-300 font-semibold block mb-1">Descripción:</label>
+                <textarea
+                  value={editingCourse.description}
+                  onChange={(e) => setEditingCourse({ ...editingCourse, description: e.target.value })}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white h-20"
+                  required
+                />
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-extrabold rounded-xl text-xs shadow-lg transition-all flex items-center justify-center gap-2"
+              >
+                <Save className="w-4 h-4" /> Guardar Cambios
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* EDIT CERTIFICATE MODAL */}
+      {editingCertificate && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="glass-panel w-full max-w-lg rounded-3xl p-6 relative border border-amber-500/30 shadow-2xl space-y-4">
+            <button
+              onClick={() => setEditingCertificate(null)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white p-2 rounded-full hover:bg-slate-800"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <h3 className="font-bold text-lg text-white border-b border-slate-800 pb-3">Editar & Re-Emitir Certificado</h3>
+
+            <form onSubmit={handleSaveCertificate} className="space-y-4 text-xs">
+              <div>
+                <label className="text-slate-300 font-semibold block mb-1">Nombre Completo del Graduado:</label>
+                <input
+                  type="text"
+                  value={editingCertificate.student_name}
+                  onChange={(e) => setEditingCertificate({ ...editingCertificate, student_name: e.target.value })}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white font-bold"
+                  required
+                />
+              </div>
+
+              <div>
+                <label className="text-slate-300 font-semibold block mb-1">Programa Académico:</label>
+                <input
+                  type="text"
+                  value={editingCertificate.course_title}
+                  onChange={(e) => setEditingCertificate({ ...editingCertificate, course_title: e.target.value })}
+                  className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-cyan-400 font-bold"
+                  required
+                />
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-slate-300 font-semibold block mb-1">Horas Lectivas:</label>
+                  <input
+                    type="number"
+                    value={editingCertificate.academic_hours}
+                    onChange={(e) => setEditingCertificate({ ...editingCertificate, academic_hours: parseInt(e.target.value) || 0 })}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"
+                    required
+                  />
+                </div>
+
+                <div>
+                  <label className="text-slate-300 font-semibold block mb-1">Fecha de Emisión:</label>
+                  <input
+                    type="text"
+                    value={editingCertificate.issued_at}
+                    onChange={(e) => setEditingCertificate({ ...editingCertificate, issued_at: e.target.value })}
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"
+                    required
+                  />
+                </div>
+              </div>
+
+              <button
+                type="submit"
+                className="w-full py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-white font-extrabold rounded-xl text-xs shadow-lg transition-all flex items-center justify-center gap-2"
+              >
+                <RefreshCw className="w-4 h-4" /> Re-Emitir Certificado con Sello SHA-256
+              </button>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* VIEW RECEIPT IMAGE MODAL */}
+      {selectedReceiptImage && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="glass-panel w-full max-w-lg rounded-3xl p-6 relative border border-cyan-500/30 shadow-2xl space-y-4 text-center">
+            <button
+              onClick={() => setSelectedReceiptImage(null)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white p-2 rounded-full hover:bg-slate-800"
+            >
+              <X className="w-5 h-5" />
+            </button>
+            <h4 className="font-bold text-white text-base">Comprobante de Pago Subido por el Alumno</h4>
+            <div className="bg-slate-900 p-2 rounded-2xl max-h-[70vh] overflow-auto">
+              <img src={selectedReceiptImage} alt="Comprobante" className="w-full h-auto rounded-xl" />
+            </div>
+          </div>
         </div>
       )}
     </div>

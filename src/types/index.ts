@@ -1,9 +1,9 @@
-export type UserRole = 'student' | 'admin' | 'public';
+export type UserRole = 'student' | 'admin';
 
 export interface Profile {
   id: string;
-  full_name: string;
   email: string;
+  full_name: string;
   role: UserRole;
   avatar_url?: string;
   created_at: string;
@@ -18,17 +18,8 @@ export interface Course {
   price_usd: number;
   image_url: string;
   category: string;
+  total_students?: number;
   is_active?: boolean;
-  total_students: number;
-}
-
-export interface Enrollment {
-  id: string;
-  student_id: string;
-  course_id: string;
-  progress_percentage: number;
-  completed_at?: string;
-  status: 'enrolled' | 'completed';
 }
 
 export interface PaymentReceipt {
@@ -58,18 +49,23 @@ export interface Certificate {
   hash_sha256: string;
   qr_code_url: string;
   issued_at: string;
-  pdf_url?: string;
+  background_template_url?: string;
 }
 
 export interface CertificateTemplate {
   id: string;
-  title: string;
+  course_id: string;
   background_url: string;
   fields_config: {
-    student_name: { x: number; y: number; fontSize: number; fontColor: string };
-    course_title: { x: number; y: number; fontSize: number; fontColor: string };
-    issue_date: { x: number; y: number; fontSize: number; fontColor: string };
+    student_name: { x: number; y: number; fontSize: number };
+    course_title: { x: number; y: number; fontSize: number };
+    issued_at: { x: number; y: number; fontSize: number };
     qr_code: { x: number; y: number; size: number };
   };
   is_active: boolean;
+}
+
+export interface SystemSettings {
+  payment_qr_url: string;
+  payment_instructions: string;
 }

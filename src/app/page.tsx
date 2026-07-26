@@ -7,9 +7,8 @@ import { CertificateViewer } from '@/components/CertificateViewer';
 import { AdminDashboard } from '@/components/AdminDashboard';
 import { PublicVerification } from '@/components/PublicVerification';
 import { AuthModal } from '@/components/AuthModal';
-import { UserRole, PaymentReceipt, Certificate, Course } from '@/types';
-import { INITIAL_RECEIPTS, INITIAL_CERTIFICATES } from '@/lib/mockData';
-import { fetchVigentesCoursesFromQuinto } from '@/lib/quintoClient';
+import { UserRole, PaymentReceipt, Certificate, Course, SystemSettings } from '@/types';
+import { INITIAL_RECEIPTS, INITIAL_CERTIFICATES, MOCK_COURSES, DEFAULT_SETTINGS } from '@/lib/mockData';
 import { sendStudentReleaseNotification } from '@/lib/notificationService';
 import { getCoursesFromDB, getReceiptsFromDB, getCertificatesFromDB, saveReceiptToDB, saveCertificateToDB, updateReceiptStatusInDB } from '@/lib/supabaseService';
 import { supabase } from '@/lib/supabaseClient';
@@ -20,26 +19,25 @@ export default function Home() {
   const [userProfile, setUserProfile] = useState<{ email: string; name: string; role: UserRole } | null>(null);
   const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
 
-  const [courses, setCourses] = useState<Course[]>([]);
+  const [courses, setCourses] = useState<Course[]>(MOCK_COURSES);
   const [receipts, setReceipts] = useState<PaymentReceipt[]>(INITIAL_RECEIPTS);
   const [certificates, setCertificates] = useState<Certificate[]>(INITIAL_CERTIFICATES);
   const [deliveries, setDeliveries] = useState<any[]>([]);
+  const [systemSettings, setSystemSettings] = useState<SystemSettings>(DEFAULT_SETTINGS);
   const [verifyHash, setVerifyHash] = useState<string>('');
 
   useEffect(() => {
     async function initData() {
-      // Supabase Live DB Load
       const dbCourses = await getCoursesFromDB();
       const dbReceipts = await getReceiptsFromDB();
       const dbCerts = await getCertificatesFromDB();
 
-      setCourses(dbCourses);
-      setReceipts(dbReceipts);
-      setCertificates(dbCerts);
+      if (dbCourses && dbCourses.length > 0) setCourses(dbCourses);
+      if (dbReceipts && dbReceipts.length > 0) setReceipts(dbReceipts);
+      if (dbCerts && dbCerts.length > 0) setCertificates(dbCerts);
     }
     initData();
 
-    // Check active session
     supabase.auth.getSession().then(({ data: { session } }) => {
       if (session?.user) {
         const role = (session.user.user_metadata?.role as UserRole) || (session.user.email?.includes('admin') ? 'admin' : 'student');
@@ -72,7 +70,7 @@ export default function Home() {
   const handleAddReceipt = async (newReceipt: PaymentReceipt) => {
     setReceipts((prev) => [newReceipt, ...prev]);
     await saveReceiptToDB(newReceipt);
-    alert('¡Comprobante guardado en Supabase, leído por OCR y notificado por WhatsApp al Administrador con éxito!');
+    alert('¡Comprobante leído por la IA y enviado a la Cola de Aprobaciones del Administrador!');
   };
 
   const handleApproveReceipt = async (receipt: PaymentReceipt) => {
@@ -87,8 +85,8 @@ export default function Home() {
       enrollment_id: 'enr-' + Date.now(),
       student_name: receipt.student_name,
       course_title: receipt.course_title,
-      academic_hours: 60,
-      instructor_name: 'Equipo Especializado Quinto Eje',
+      academic_hours: 50,
+      instructor_name: 'Directorio Quinto Eje',
       hash_sha256: receipt.receipt_hash,
       qr_code_url: `https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://miscertificados.quinto.app/validar/${receipt.receipt_hash}`,
       issued_at: new Date().toLocaleDateString('es-ES', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -97,13 +95,12 @@ export default function Home() {
     setCertificates((prev) => [newCert, ...prev]);
     await saveCertificateToDB(newCert);
 
-    // Send Automated Release Notifications to Student via WhatsApp & Email
     sendStudentReleaseNotification(newCert);
 
-    alert(`¡Pago de ${receipt.student_name} APROBADO (OK)!
+    alert(`¡Pago APROBADO (OK)!
 
-1. Certificado guardado y liberado en Supabase.
-2. Notificación push de WhatsApp enviada al estudiante.`);
+1. Certificado liberado exitosamente.
+2. Alerta de WhatsApp enviada al alumno.`);
   };
 
   const handleRejectReceipt = async (receiptId: string) => {
@@ -148,7 +145,10 @@ export default function Home() {
 
         <main className="max-w-7xl mx-auto p-6 md:p-8">
           {currentTab === 'courses' && (
-            <StudentCourses onAddReceipt={handleAddReceipt} />
+            <StudentCourses
+              paymentQrUrl={systemSettings.payment_qr_url}
+              onAddReceipt={handleAddReceipt}
+            />
           )}
 
           {currentTab === 'certificates' && (
@@ -165,11 +165,13 @@ export default function Home() {
               receipts={receipts}
               certificates={certificates}
               deliveries={deliveries}
+              systemSettings={systemSettings}
               onUpdateCourses={setCourses}
               onApproveReceipt={handleApproveReceipt}
               onRejectReceipt={handleRejectReceipt}
               onUpdateCertificate={handleUpdateCertificate}
               onDeleteCertificate={handleDeleteCertificate}
+              onUpdateSettings={setSystemSettings}
             />
           )}
 
