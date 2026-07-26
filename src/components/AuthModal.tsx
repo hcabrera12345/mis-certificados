@@ -35,7 +35,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
       });
 
       if (error) {
-        setErrorMsg(`Error en Autenticación Google: ${error.message}`);
+        setErrorMsg(`Error de Google Provider en Supabase: ${error.message} (Código: ${error.status || '400'}). Revisa que el Client ID / Secret en Supabase coincidan con Google Cloud y que la App esté Publicada.`);
         setLoading(false);
       }
     } catch (err: any) {
