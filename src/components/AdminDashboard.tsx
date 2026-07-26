@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Award, Users, DollarSign, ShieldCheck, CheckCircle2, XCircle, Send, Upload, Eye, Edit, Plus, Trash2, Save, FileSpreadsheet, QrCode, Image as ImageIcon, Truck, RefreshCw } from 'lucide-react';
+import { X, Award, Users, DollarSign, ShieldCheck, CheckCircle2, XCircle, Send, Upload, Eye, Edit, Plus, Trash2, Save, FileSpreadsheet, QrCode, Image as ImageIcon, Truck, RefreshCw, Check, AlertTriangle, ShieldAlert } from 'lucide-react';
 import { PaymentReceipt, Certificate, Course, SystemSettings } from '@/types';
 import { exportReceiptsToCSV, exportCertificatesToCSV } from '@/lib/reportExporter';
 
@@ -33,7 +33,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onUpdateSettings
 }) => {
   const [activeTab, setActiveTab] = useState<'approvals' | 'courses' | 'certificates' | 'settings' | 'logistics'>('approvals');
-  const [selectedReceiptImage, setSelectedReceiptImage] = useState<string | null>(null);
+  const [inspectingReceipt, setInspectingReceipt] = useState<PaymentReceipt | null>(null);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [editingCertificate, setEditingCertificate] = useState<Certificate | null>(null);
 
@@ -80,59 +80,64 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-2xl font-extrabold text-white flex items-center gap-2">
-            Consola de Dirección & Administración Total
+            Consola de Validación & Dirección General
             <span className="text-xs px-2.5 py-0.5 bg-amber-500/20 text-amber-300 border border-amber-500/30 rounded-full font-bold">
               Hernán (Director Quinto)
             </span>
           </h1>
-          <p className="text-slate-400 text-xs">Gestión libre de Cursos, Precios, Certificados, QR de Pago y Aprobaciones.</p>
+          <p className="text-slate-400 text-xs">Módulo de Inspección de Pagos, Aprobaciones, Cursos y Certificados.</p>
         </div>
 
         {/* 5 Working Navigation Tabs */}
         <div className="flex flex-wrap items-center gap-2 bg-slate-900/80 p-1.5 rounded-2xl border border-slate-800 text-xs font-bold">
           <button
             onClick={() => setActiveTab('approvals')}
-            className={`px-3 py-1.5 rounded-xl transition-all ${
+            className={`px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 ${
               activeTab === 'approvals' ? 'bg-cyan-500 text-white shadow-md' : 'text-slate-400 hover:text-white'
             }`}
           >
-            Aprobaciones ({pendingReceipts.length})
+            <ShieldCheck className="w-4 h-4" />
+            Validar Comprobantes ({pendingReceipts.length})
           </button>
 
           <button
             onClick={() => setActiveTab('courses')}
-            className={`px-3 py-1.5 rounded-xl transition-all ${
+            className={`px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 ${
               activeTab === 'courses' ? 'bg-cyan-500 text-white shadow-md' : 'text-slate-400 hover:text-white'
             }`}
           >
-            Editar Cursos & Precios ({courses.length})
+            <Edit className="w-4 h-4" />
+            Cursos & Precios ({courses.length})
           </button>
 
           <button
             onClick={() => setActiveTab('certificates')}
-            className={`px-3 py-1.5 rounded-xl transition-all ${
+            className={`px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 ${
               activeTab === 'certificates' ? 'bg-cyan-500 text-white shadow-md' : 'text-slate-400 hover:text-white'
             }`}
           >
-            Editar Certificados ({certificates.length})
+            <Award className="w-4 h-4" />
+            Certificados ({certificates.length})
           </button>
 
           <button
             onClick={() => setActiveTab('settings')}
-            className={`px-3 py-1.5 rounded-xl transition-all ${
+            className={`px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 ${
               activeTab === 'settings' ? 'bg-amber-500 text-white shadow-md' : 'text-slate-400 hover:text-white'
             }`}
           >
-            Subir QR & Plantillas
+            <QrCode className="w-4 h-4" />
+            Subir QR Oficial
           </button>
 
           <button
             onClick={() => setActiveTab('logistics')}
-            className={`px-3 py-1.5 rounded-xl transition-all ${
+            className={`px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 ${
               activeTab === 'logistics' ? 'bg-amber-500 text-white shadow-md' : 'text-slate-400 hover:text-white'
             }`}
           >
-            Logística Puerta ({deliveries.length})
+            <Truck className="w-4 h-4" />
+            Logística ({deliveries.length})
           </button>
         </div>
       </div>
@@ -153,69 +158,70 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </button>
       </div>
 
-      {/* TAB 1: APPROVALS QUEUE */}
+      {/* TAB 1: ADMIN PAYMENT RECEIPT VALIDATION & INSPECTOR */}
       {activeTab === 'approvals' && (
         <div className="glass-panel rounded-3xl p-6 border border-slate-800 space-y-6">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Send className="w-5 h-5 text-green-400" />
-              <h3 className="font-bold text-white text-lg">Cola de Aprobaciones de Comprobantes</h3>
+          <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+            <div>
+              <h3 className="font-bold text-white text-lg flex items-center gap-2">
+                <ShieldCheck className="w-5 h-5 text-cyan-400" />
+                Validación de Comprobantes de Pago (Inspección del Administrador)
+              </h3>
+              <p className="text-xs text-slate-400">Revisa la foto del pago subida por el cliente, compara datos con tu cuenta bancaria y aprueba o rechaza.</p>
             </div>
-            <span className="text-xs text-slate-400">Pendientes: {pendingReceipts.length}</span>
+            <span className="text-xs text-amber-400 font-bold px-3 py-1 bg-amber-500/10 border border-amber-500/20 rounded-full">
+              Pendientes de Validación: {pendingReceipts.length}
+            </span>
           </div>
 
           {pendingReceipts.length === 0 ? (
             <div className="text-center py-12 space-y-3">
               <CheckCircle2 className="w-12 h-12 text-emerald-400 mx-auto" />
-              <p className="text-white font-bold text-base">¡No hay solicitudes pendientes!</p>
-              <p className="text-xs text-slate-400">Todos los comprobantes han sido procesados.</p>
+              <p className="text-white font-bold text-base">¡No hay comprobantes pendientes de validación!</p>
+              <p className="text-xs text-slate-400">Todos los pagos han sido revisados y procesados.</p>
             </div>
           ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-slate-300">
-                <thead className="bg-slate-900/80 text-cyan-400 font-semibold border-b border-slate-800">
-                  <tr>
-                    <th className="p-3">Alumno</th>
-                    <th className="p-3">Programa Académico</th>
-                    <th className="p-3">Nº Operación OCR</th>
-                    <th className="p-3">Monto Leído</th>
-                    <th className="p-3">Comprobante</th>
-                    <th className="p-3 text-right">Acción de Aprobación</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800">
-                  {pendingReceipts.map((r) => (
-                    <tr key={r.id} className="hover:bg-slate-900/40 transition-colors">
-                      <td className="p-3 font-bold text-white">{r.student_name}</td>
-                      <td className="p-3">{r.course_title}</td>
-                      <td className="p-3 font-mono text-cyan-400">{r.extracted_op_code}</td>
-                      <td className="p-3 font-bold text-emerald-400">US ${r.extracted_amount.toFixed(2)}</td>
-                      <td className="p-3">
-                        <button
-                          onClick={() => setSelectedReceiptImage(r.receipt_image_url)}
-                          className="px-2.5 py-1 bg-slate-800 hover:bg-slate-700 text-cyan-300 rounded-lg flex items-center gap-1 text-[11px]"
-                        >
-                          <Eye className="w-3.5 h-3.5" /> Ver Foto
-                        </button>
-                      </td>
-                      <td className="p-3 text-right space-x-2">
-                        <button
-                          onClick={() => onApproveReceipt(r)}
-                          className="px-3 py-1.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-bold rounded-lg shadow-md transition-all inline-flex items-center gap-1"
-                        >
-                          <CheckCircle2 className="w-3.5 h-3.5" /> Aprobar (OK)
-                        </button>
-                        <button
-                          onClick={() => onRejectReceipt(r.id)}
-                          className="px-3 py-1.5 bg-red-950/60 hover:bg-red-900/60 border border-red-500/30 text-red-400 font-semibold rounded-lg transition-all inline-flex items-center gap-1"
-                        >
-                          <XCircle className="w-3.5 h-3.5" /> Rechazar
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              {pendingReceipts.map((r) => (
+                <div key={r.id} className="bg-slate-900/90 rounded-2xl p-5 border border-slate-800 space-y-4 shadow-xl hover:border-cyan-500/40 transition-all">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-white">{r.student_name}</span>
+                    <span className="text-[10px] px-2.5 py-0.5 bg-cyan-500/20 text-cyan-300 rounded-full font-mono font-bold">
+                      {r.extracted_op_code}
+                    </span>
+                  </div>
+
+                  <div className="bg-slate-950 p-3 rounded-xl border border-slate-800 text-xs space-y-1">
+                    <p className="text-slate-400">Programa Académico: <strong className="text-cyan-400">{r.course_title}</strong></p>
+                    <p className="text-slate-400">Monto Leído por IA: <strong className="text-emerald-400">US ${r.extracted_amount.toFixed(2)}</strong></p>
+                    <p className="text-slate-400">Fecha Transferencia: <span className="text-slate-300">{r.extracted_date}</span></p>
+                  </div>
+
+                  <div className="flex items-center gap-3">
+                    <button
+                      onClick={() => setInspectingReceipt(r)}
+                      className="flex-1 py-2.5 bg-slate-800 hover:bg-slate-700 text-cyan-300 font-bold rounded-xl text-xs transition-all flex items-center justify-center gap-1.5"
+                    >
+                      <Eye className="w-4 h-4" /> Inspeccionar Foto Lado a Lado
+                    </button>
+
+                    <button
+                      onClick={() => onApproveReceipt(r)}
+                      className="px-4 py-2.5 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-extrabold rounded-xl text-xs shadow-md transition-all flex items-center gap-1"
+                    >
+                      <CheckCircle2 className="w-4 h-4" /> Aprobar (OK)
+                    </button>
+
+                    <button
+                      onClick={() => onRejectReceipt(r.id)}
+                      className="p-2.5 bg-red-950 hover:bg-red-900 border border-red-500/30 text-red-400 rounded-xl transition-all"
+                      title="Rechazar Comprobante"
+                    >
+                      <XCircle className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -225,7 +231,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {activeTab === 'courses' && (
         <div className="glass-panel rounded-3xl p-6 border border-slate-800 space-y-6">
           <div className="flex items-center justify-between">
-            <h3 className="font-bold text-white text-lg">Gestión de Cursos & Montos de Certificado</h3>
+            <h3 className="font-bold text-white text-lg">Gestión de Cursos, Precios (USD) & Horas Lectivas</h3>
             <button
               onClick={() =>
                 setEditingCourse({
@@ -269,7 +275,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         onClick={() => setEditingCourse(c)}
                         className="px-3 py-1.5 bg-cyan-950 hover:bg-cyan-900 border border-cyan-500/40 text-cyan-300 font-bold rounded-xl transition-all inline-flex items-center gap-1"
                       >
-                        <Edit className="w-3.5 h-3.5" /> Editar Curso / Precio
+                        <Edit className="w-3.5 h-3.5" /> Editar Datos / Precio / Horas
                       </button>
                     </td>
                   </tr>
@@ -291,7 +297,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <tr>
                   <th className="p-3">Graduado</th>
                   <th className="p-3">Curso</th>
-                  <th className="p-3">Horas</th>
+                  <th className="p-3">Horas Lectivas</th>
                   <th className="p-3">Fecha</th>
                   <th className="p-3">Sello SHA-256</th>
                   <th className="p-3 text-right">Acciones</th>
@@ -330,7 +336,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {/* TAB 4: UPLOAD PAYMENT QR & TEMPLATES */}
       {activeTab === 'settings' && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          {/* Section: Upload Official Payment QR */}
           <div className="glass-panel p-6 rounded-3xl border border-amber-500/30 space-y-4">
             <div className="flex items-center gap-2">
               <QrCode className="w-5 h-5 text-amber-400" />
@@ -354,7 +359,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             </div>
           </div>
 
-          {/* Section: Upload Certificate Background Template */}
           <div className="glass-panel p-6 rounded-3xl border border-cyan-500/30 space-y-4">
             <div className="flex items-center gap-2">
               <ImageIcon className="w-5 h-5 text-cyan-400" />
@@ -419,6 +423,89 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
       )}
 
+      {/* SIDE-BY-SIDE INSPECTOR MODAL (Foto del Comprobante vs Datos de Operacion) */}
+      {inspectingReceipt && (
+        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
+          <div className="glass-panel w-full max-w-4xl rounded-3xl p-6 relative border border-cyan-500/30 shadow-2xl space-y-4">
+            <button
+              onClick={() => setInspectingReceipt(null)}
+              className="absolute top-4 right-4 text-slate-400 hover:text-white p-2 rounded-full hover:bg-slate-800"
+            >
+              <X className="w-5 h-5" />
+            </button>
+
+            <h3 className="font-bold text-lg text-white border-b border-slate-800 pb-3 flex items-center gap-2">
+              <ShieldCheck className="w-5 h-5 text-cyan-400" />
+              Inspección Lado a Lado del Comprobante de Pago
+            </h3>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
+              {/* Left Side: Receipt Image */}
+              <div className="bg-slate-900 p-3 rounded-2xl border border-slate-800 max-h-[60vh] overflow-auto text-center space-y-2">
+                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Foto / Captura Subida por el Alumno</span>
+                <img src={inspectingReceipt.receipt_image_url} alt="Comprobante Alumno" className="w-full h-auto rounded-xl shadow-md" />
+              </div>
+
+              {/* Right Side: Extracted Data Comparison */}
+              <div className="space-y-4 text-xs">
+                <div className="bg-slate-900/90 p-4 rounded-2xl border border-slate-800 space-y-3">
+                  <h4 className="font-bold text-white text-sm border-b border-slate-800 pb-2">Datos de la Transacción</h4>
+                  
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Alumno:</span>
+                      <strong className="text-white font-bold">{inspectingReceipt.student_name}</strong>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Curso Solicitado:</span>
+                      <strong className="text-cyan-400">{inspectingReceipt.course_title}</strong>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Nº Operación (IA OCR):</span>
+                      <strong className="font-mono text-cyan-300">{inspectingReceipt.extracted_op_code}</strong>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Monto Leído:</span>
+                      <strong className="text-emerald-400 text-base font-extrabold">US ${inspectingReceipt.extracted_amount.toFixed(2)}</strong>
+                    </div>
+
+                    <div className="flex justify-between">
+                      <span className="text-slate-400">Fecha Transferencia:</span>
+                      <span className="text-slate-300">{inspectingReceipt.extracted_date}</span>
+                    </div>
+                  </div>
+                </div>
+
+                <div className="flex items-center gap-3 pt-2">
+                  <button
+                    onClick={() => {
+                      onApproveReceipt(inspectingReceipt);
+                      setInspectingReceipt(null);
+                    }}
+                    className="flex-1 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-extrabold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"
+                  >
+                    <CheckCircle2 className="w-4 h-4" /> Aprobar Pago & Liberar Certificado (OK)
+                  </button>
+
+                  <button
+                    onClick={() => {
+                      onRejectReceipt(inspectingReceipt.id);
+                      setInspectingReceipt(null);
+                    }}
+                    className="px-4 py-3 bg-red-950 hover:bg-red-900 border border-red-500/30 text-red-400 font-bold rounded-xl transition-all"
+                  >
+                    Rechazar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* EDIT COURSE MODAL */}
       {editingCourse && (
         <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
@@ -430,7 +517,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <X className="w-5 h-5" />
             </button>
 
-            <h3 className="font-bold text-lg text-white border-b border-slate-800 pb-3">Editar Curso & Precio</h3>
+            <h3 className="font-bold text-lg text-white border-b border-slate-800 pb-3">Editar Curso, Precio & Horas Lectivas</h3>
 
             <form onSubmit={handleSaveCourse} className="space-y-4 text-xs">
               <div>
@@ -458,12 +545,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
 
                 <div>
-                  <label className="text-slate-300 font-semibold block mb-1">Horas Lectivas:</label>
+                  <label className="text-slate-300 font-semibold block mb-1">Horas Lectivas Libres:</label>
                   <input
                     type="number"
                     value={editingCourse.academic_hours}
                     onChange={(e) => setEditingCourse({ ...editingCourse, academic_hours: parseInt(e.target.value) || 0 })}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-cyan-400 font-bold"
                     required
                   />
                 </div>
@@ -539,12 +626,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
               <div className="grid grid-cols-2 gap-3">
                 <div>
-                  <label className="text-slate-300 font-semibold block mb-1">Horas Lectivas:</label>
+                  <label className="text-slate-300 font-semibold block mb-1">Horas Lectivas Libres:</label>
                   <input
                     type="number"
                     value={editingCertificate.academic_hours}
                     onChange={(e) => setEditingCertificate({ ...editingCertificate, academic_hours: parseInt(e.target.value) || 0 })}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"
+                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-cyan-400 font-bold"
                     required
                   />
                 </div>
@@ -568,24 +655,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <RefreshCw className="w-4 h-4" /> Re-Emitir Certificado con Sello SHA-256
               </button>
             </form>
-          </div>
-        </div>
-      )}
-
-      {/* VIEW RECEIPT IMAGE MODAL */}
-      {selectedReceiptImage && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="glass-panel w-full max-w-lg rounded-3xl p-6 relative border border-cyan-500/30 shadow-2xl space-y-4 text-center">
-            <button
-              onClick={() => setSelectedReceiptImage(null)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white p-2 rounded-full hover:bg-slate-800"
-            >
-              <X className="w-5 h-5" />
-            </button>
-            <h4 className="font-bold text-white text-base">Comprobante de Pago Subido por el Alumno</h4>
-            <div className="bg-slate-900 p-2 rounded-2xl max-h-[70vh] overflow-auto">
-              <img src={selectedReceiptImage} alt="Comprobante" className="w-full h-auto rounded-xl" />
-            </div>
           </div>
         </div>
       )}
