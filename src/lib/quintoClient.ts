@@ -1,61 +1,42 @@
-import { createClient } from '@supabase/supabase-js';
 import { Course } from '@/types';
 
-// Quinto Supabase Environment Variables or Direct Integration
-const QUINTO_SUPABASE_URL = process.env.NEXT_PUBLIC_QUINTO_SUPABASE_URL || 'https://quinto-crm-supabase.co';
-const QUINTO_SUPABASE_ANON_KEY = process.env.NEXT_PUBLIC_QUINTO_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...';
-
-export const quintoSupabase = createClient(QUINTO_SUPABASE_URL, QUINTO_SUPABASE_ANON_KEY);
-
-// Active Courses in Quinto CRM
-export const QUINTO_ACTIVE_COURSES: Course[] = [
-  {
-    id: 'quinto-course-1',
-    title: 'Curso Adulto Mayor',
-    description: 'Programa oficial de capacitación en Cuidado, Acompañamiento e Intervención Integral del Adulto Mayor.',
-    academic_hours: 60,
-    instructor_name: 'Equipo Especializado Quinto Eje',
-    price_usd: 45.00,
-    image_url: 'https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?w=600',
-    category: 'Salud & Cuidado',
-    total_students: 3420
-  },
-  {
-    id: 'quinto-course-2',
-    title: 'Servicios de Quinto Eje',
-    description: 'Formación profesional en Gestión Estratégica, Operaciones de Campo y Desarrollo de Proyectos Quinto Eje.',
-    academic_hours: 40,
-    instructor_name: 'Directorio Ejecutivo Quinto',
-    price_usd: 50.00,
-    image_url: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=600',
-    category: 'Estrategia & Operaciones',
-    total_students: 1890
-  }
-];
-
 export async function fetchVigentesCoursesFromQuinto(): Promise<Course[]> {
-  try {
-    // Attempt real DB query to Quinto opportunities / courses table
-    const { data, error } = await quintoSupabase
-      .from('opportunities')
-      .select('course_name')
-      .limit(10);
-
-    if (error || !data || data.length === 0) {
-      // Fallback to official active Quinto courses
-      return QUINTO_ACTIVE_COURSES;
+  return [
+    {
+      id: 'a1b2c3d4-0001-0000-0000-000000000001',
+      title: 'Curso 1: IA Aplicada para el Adulto Mayor',
+      description: 'Programa oficial de formación en IA y acompañamiento integral del Adulto Mayor (Edición Concluida con 24 Graduados).',
+      academic_hours: 60,
+      instructor_name: 'Equipo Especializado Quinto Eje',
+      price_usd: 45.00,
+      image_url: 'https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?w=600',
+      category: 'Salud & Tecnología',
+      total_students: 24,
+      is_active: true
+    },
+    {
+      id: 'a1b2c3d4-0002-0000-0000-000000000002',
+      title: 'Curso 2: Inteligencia Artificial Aplicada & Herramientas Avanzadas',
+      description: 'Capacitación profesional en automatización con IA, agentes inteligentes y modelos generativos.',
+      academic_hours: 50,
+      instructor_name: 'Directorio Técnico Quinto Eje',
+      price_usd: 50.00,
+      image_url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600',
+      category: 'Inteligencia Artificial',
+      total_students: 45,
+      is_active: true
+    },
+    {
+      id: 'a1b2c3d4-0003-0000-0000-000000000003',
+      title: 'Curso 3: Formación Profesional & Servicios de Quinto Eje',
+      description: 'Gestión estratégica de proyectos corporativos, ingeniería de IA y consultoría especializada de Quinto Eje (Brochure Oficial /curso_3_brochure.pdf).',
+      academic_hours: 40,
+      instructor_name: 'Directorio Ejecutivo Quinto',
+      price_usd: 50.00,
+      image_url: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=600',
+      category: 'Ingeniería & Estrategia',
+      total_students: 30,
+      is_active: true
     }
-
-    // Filter unique active course names from Quinto CRM
-    const uniqueNames = Array.from(new Set(data.map((item: any) => item.course_name))).filter(Boolean);
-    
-    if (uniqueNames.length === 0) {
-      return QUINTO_ACTIVE_COURSES;
-    }
-
-    return QUINTO_ACTIVE_COURSES;
-  } catch (err) {
-    console.warn('Conectando a Quinto CRM fallback local activado:', err);
-    return QUINTO_ACTIVE_COURSES;
-  }
+  ];
 }

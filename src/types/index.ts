@@ -18,6 +18,7 @@ export interface Course {
   price_usd: number;
   image_url: string;
   category: string;
+  is_active?: boolean;
   total_students: number;
 }
 

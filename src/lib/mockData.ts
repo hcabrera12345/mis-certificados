@@ -1,62 +1,89 @@
 import { Profile, Course, PaymentReceipt, Certificate } from '@/types';
-import { QUINTO_ACTIVE_COURSES } from './quintoClient';
 
-export const MOCK_PROFILE: Profile = {
-  id: 'usr-101',
-  full_name: 'María Elena Rodríguez',
-  email: 'maria.rodriguez@quinto.app',
+export const MOCK_STUDENT: Profile = {
+  id: 'usr-student-001',
+  email: 'alumno@quinto.app',
+  full_name: 'Hernán Cabrera',
   role: 'student',
-  avatar_url: 'https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=150',
-  created_at: '2026-01-15T10:00:00Z'
+  created_at: '2026-07-01'
 };
 
-export const MOCK_COURSES: Course[] = QUINTO_ACTIVE_COURSES;
+export const MOCK_ADMIN: Profile = {
+  id: 'usr-admin-001',
+  email: 'admin@quinto.app',
+  full_name: 'Hernán (Director Quinto)',
+  role: 'admin',
+  created_at: '2026-06-01'
+};
+
+export const MOCK_COURSES: Course[] = [
+  {
+    id: 'a1b2c3d4-0001-0000-0000-000000000001',
+    title: 'Curso 1: IA Aplicada para el Adulto Mayor',
+    description: 'Programa oficial de formación en IA y acompañamiento integral del Adulto Mayor (Edición Concluida con 24 Graduados).',
+    academic_hours: 60,
+    instructor_name: 'Equipo Especializado Quinto Eje',
+    price_usd: 45.00,
+    image_url: 'https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?w=600',
+    category: 'Salud & Tecnología',
+    total_students: 24,
+    is_active: true
+  },
+  {
+    id: 'a1b2c3d4-0002-0000-0000-000000000002',
+    title: 'Curso 2: Inteligencia Artificial Aplicada & Herramientas Avanzadas',
+    description: 'Capacitación profesional en automatización con IA, agentes inteligentes y modelos generativos.',
+    academic_hours: 50,
+    instructor_name: 'Directorio Técnico Quinto Eje',
+    price_usd: 50.00,
+    image_url: 'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600',
+    category: 'Inteligencia Artificial',
+    total_students: 45,
+    is_active: true
+  },
+  {
+    id: 'a1b2c3d4-0003-0000-0000-000000000003',
+    title: 'Curso 3: Formación Profesional & Servicios de Quinto Eje',
+    description: 'Gestión estratégica de proyectos corporativos, ingeniería de IA y consultoría especializada de Quinto Eje (Brochure Oficial /curso_3_brochure.pdf).',
+    academic_hours: 40,
+    instructor_name: 'Directorio Ejecutivo Quinto',
+    price_usd: 50.00,
+    image_url: 'https://images.unsplash.com/photo-1552664730-d307ca884978?w=600',
+    category: 'Ingeniería & Estrategia',
+    total_students: 30,
+    is_active: true
+  }
+];
 
 export const INITIAL_RECEIPTS: PaymentReceipt[] = [
   {
-    id: 'rec-8801',
-    student_id: 'usr-101',
-    student_name: 'María Elena Rodríguez',
-    course_id: 'quinto-course-1',
-    course_title: 'Curso Adulto Mayor',
+    id: 'rec-001',
+    student_id: 'usr-student-001',
+    student_name: 'Hernán Cabrera',
+    course_id: 'a1b2c3d4-0001-0000-0000-000000000001',
+    course_title: 'Curso 1: IA Aplicada para el Adulto Mayor',
     receipt_image_url: 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=400',
-    receipt_hash: 'a8f9c2d1e4b5c6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1',
-    extracted_op_code: 'OP-98421056',
+    receipt_hash: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+    extracted_op_code: 'YAPE-8941205',
     extracted_amount: 45.00,
-    extracted_date: '25/07/2026',
-    extracted_sender: 'María E. Rodríguez',
+    extracted_date: '2026-07-20 14:32',
+    extracted_sender: 'Hernán Cabrera',
     ocr_status: 'parsed',
     admin_approval_status: 'approved',
-    created_at: '2026-07-25T18:30:00Z'
-  },
-  {
-    id: 'rec-8802',
-    student_id: 'usr-102',
-    student_name: 'Gabriel Morales',
-    course_id: 'quinto-course-2',
-    course_title: 'Servicios de Quinto Eje',
-    receipt_image_url: 'https://images.unsplash.com/photo-1554224154-26032ffc0d07?w=400',
-    receipt_hash: 'b9e0d3f2a1c4b5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0',
-    extracted_op_code: 'OP-77341902',
-    extracted_amount: 50.00,
-    extracted_date: '25/07/2026',
-    extracted_sender: 'Gabriel Morales S.',
-    ocr_status: 'parsed',
-    admin_approval_status: 'pending',
-    created_at: '2026-07-25T19:45:00Z'
+    created_at: '2026-07-20'
   }
 ];
 
 export const INITIAL_CERTIFICATES: Certificate[] = [
   {
-    id: 'cert-2026-9842',
-    enrollment_id: 'enr-1',
-    student_name: 'María Elena Rodríguez',
-    course_title: 'Curso Adulto Mayor',
+    id: 'cert-001',
+    enrollment_id: 'enr-001',
+    student_name: 'Hernán Cabrera',
+    course_title: 'Curso 1: IA Aplicada para el Adulto Mayor',
     academic_hours: 60,
     instructor_name: 'Equipo Especializado Quinto Eje',
-    hash_sha256: 'a8f9c2d1e4b5c6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1',
-    qr_code_url: 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://miscertificados.quinto.app/validar/a8f9c2d1e4b5c6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1',
-    issued_at: '25 de Julio, 2026'
+    hash_sha256: 'e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+    qr_code_url: 'https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=https://miscertificados.quinto.app/validar/e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+    issued_at: '20 de Julio, 2026'
   }
 ];
