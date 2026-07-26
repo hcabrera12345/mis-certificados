@@ -26,19 +26,36 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
     try {
       const currentOrigin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
 
+      console.log('Iniciando OAuth con Google. Redirect URL:', currentOrigin);
+
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${currentOrigin}`
+          redirectTo: currentOrigin,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent'
+          }
         }
       });
 
       if (error) {
-        setErrorMsg('Autenticación Google: Verifica que hayas configurado la URL en Supabase Dashboard -> Authentication -> URL Configuration.');
+        console.error('Supabase OAuth error:', error);
+        setErrorMsg(`Error de Google Auth: ${error.message}`);
+        setLoading(false);
+        return;
+      }
+
+      if (data?.url) {
+        console.log('Redirigiendo explícitamente a:', data.url);
+        window.location.href = data.url;
+      } else {
+        setErrorMsg('No se recibió la URL de redirección de Google. Revisa la configuración del proveedor Google en Supabase.');
         setLoading(false);
       }
     } catch (err: any) {
-      setErrorMsg(err.message || 'Error en autenticación Google');
+      console.error('OAuth Exception:', err);
+      setErrorMsg(`Excepción en Google Auth: ${err.message || 'Error desconocido'}`);
       setLoading(false);
     }
   };
