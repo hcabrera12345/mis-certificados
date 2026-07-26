@@ -1,7 +1,7 @@
 -- =============================================================
--- ESQUEMA DE BASE DE DATOS SUPABASE: MIS CERTIFICADOS (v2.3 FINAL)
+-- ESQUEMA DE BASE DE DATOS SUPABASE: MIS CERTIFICADOS (v2.4 FINAL)
 -- PROYECTO: Mis Certificados (Ecosistema Quinto)
--- CURSOS EXTRAÍDOS DE LA BASE DE CONOCIMIENTO DE QUINTO
+-- CURSOS EXACTOS EXTRAÍDOS DE LOS DOCUMENTOS PDF DE LA BASE DE CONOCIMIENTO DE QUINTO
 -- =============================================================
 
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
@@ -87,37 +87,37 @@ ALTER TABLE public.certificates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.deliveries_future ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.certificate_templates ENABLE ROW LEVEL SECURITY;
 
--- SEED DATA CON LOS 3 CURSOS EXACTOS DE LA BASE DE CONOCIMIENTO DE QUINTO
+-- SEED DATA CON LOS TITULOS EXACTOS DE LOS ARCHIVOS PDF DE LA BASE DE CONOCIMIENTO DE QUINTO
 INSERT INTO public.courses (id, title, description, academic_hours, instructor_name, price_usd, image_url, category)
 VALUES 
 (
+    'a1b2c3d4-0002-0000-0000-000000000002',
+    'CURSO 2 GOBERNANZA Y ETICA APLICADA A IA',
+    'Capacitación profesional oficial en marcos normativos, responsabilidad algorítmica, cumplimiento regulatorio y ética aplicada a la Inteligencia Artificial.',
+    50,
+    'Directorio Técnico Quinto Eje',
+    50.00,
+    'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600',
+    'Gobernanza y IA'
+),
+(
+    'a1b2c3d4-0003-0000-0000-000000000003',
+    'CURSO 3 AGENTES IA PARA EMPRESAS Y NEGOCIOS',
+    'Desarrollo de agentes inteligentes autónomos, automatización de procesos corporativos e ingeniería de IA para empresas y negocios (Brochure Oficial PDF).',
+    40,
+    'Directorio Ejecutivo Quinto',
+    50.00,
+    'https://images.unsplash.com/photo-1552664730-d307ca884978?w=600',
+    'Agentes y Negocios'
+),
+(
     'a1b2c3d4-0001-0000-0000-000000000001',
-    'Curso 1: IA Aplicada para el Adulto Mayor',
-    'Programa oficial de formación en IA y acompañamiento integral del Adulto Mayor (Edición Concluida con 24 Graduados).',
+    'CURSO 1 IA APLICADA PARA EL ADULTO MAYOR',
+    'Programa oficial de formación en IA y acompañamiento integral del Adulto Mayor (Cohorte Concluida con 24 Graduados).',
     60,
     'Equipo Especializado Quinto Eje',
     45.00,
     'https://images.unsplash.com/photo-1576765608535-5f04d1e3f289?w=600',
     'Salud y Tecnologia'
-),
-(
-    'a1b2c3d4-0002-0000-0000-000000000002',
-    'Curso 2: Inteligencia Artificial Aplicada & Herramientas Avanzadas',
-    'Capacitación profesional en automatización con IA, agentes inteligentes y modelos generativos.',
-    50,
-    'Directorio Técnico Quinto Eje',
-    50.00,
-    'https://images.unsplash.com/photo-1618005182384-a83a8bd57fbe?w=600',
-    'Inteligencia Artificial'
-),
-(
-    'a1b2c3d4-0003-0000-0000-000000000003',
-    'Curso 3: Formación Profesional & Servicios de Quinto Eje',
-    'Gestión estratégica de proyectos corporativos, ingeniería de IA y consultoría especializada de Quinto Eje (Brochure Oficial /curso_3_brochure.pdf).',
-    40,
-    'Directorio Ejecutivo Quinto',
-    50.00,
-    'https://images.unsplash.com/photo-1552664730-d307ca884978?w=600',
-    'Ingenieria y Estrategia'
 )
 ON CONFLICT DO NOTHING;
