@@ -11,7 +11,7 @@ interface AuthModalProps {
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
-  const [isRegister, setIsRegister] = useState(false);
+  const [isRegister, setIsRegister] = useState(true);
   const [isAdminMode, setIsAdminMode] = useState(false);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -19,27 +19,22 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  // 1-Click Google OAuth Sign In & Auto-Registration Protocol
+  // 1-Click Google OAuth Sign In & Registration Protocol
   const handleGoogleSignIn = async () => {
     setLoading(true);
     setErrorMsg('');
     try {
-      const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}` : 'https://miscertificados.quinto.app';
+      const currentOrigin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
 
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: redirectUrl,
-          queryParams: {
-            access_type: 'offline',
-            prompt: 'consent'
-          }
+          redirectTo: `${currentOrigin}`
         }
       });
 
       if (error) {
-        // Clear guidance if Google provider is not yet activated in Supabase console
-        setErrorMsg('Autenticación Google: Para conectar Google en vivo en Supabase, activa la opción en Supabase Dashboard -> Authentication -> Providers -> Google.');
+        setErrorMsg('Autenticación Google: Verifica que hayas configurado la URL en Supabase Dashboard -> Authentication -> URL Configuration.');
         setLoading(false);
       }
     } catch (err: any) {
@@ -153,14 +148,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
             {isAdminMode
               ? 'Acceso Privado de Administración'
               : isRegister
-              ? 'Registro de Estudiante'
+              ? 'Nuevo Registro de Estudiante'
               : 'Iniciar Sesión (Estudiantes)'}
           </h3>
           <p className="text-xs text-slate-400">
             {isAdminMode
               ? 'Consola exclusiva para la dirección general del sistema Quinto.'
               : isRegister
-              ? 'Crea tu cuenta oficial para gestionar y solicitar tus certificados.'
+              ? 'Regístrate con 1-clic con Google o crea tu cuenta para tus certificados.'
               : 'Ingresa a tu portal personal para descargar tus certificados verificados.'}
           </p>
         </div>
@@ -177,7 +172,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
               type="button"
               onClick={handleGoogleSignIn}
               disabled={loading}
-              className="w-full py-2.5 bg-white hover:bg-slate-100 text-slate-900 font-bold rounded-xl text-xs transition-all flex items-center justify-center gap-2.5 shadow-md"
+              className="w-full py-3 bg-white hover:bg-slate-100 text-slate-900 font-extrabold rounded-xl text-xs transition-all flex items-center justify-center gap-2.5 shadow-lg shadow-white/10"
             >
               <svg className="w-4 h-4" viewBox="0 0 24 24">
                 <path
@@ -197,12 +192,14 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
                   d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
                 />
               </svg>
-              Continuar con Google (1-Clic)
+              {isRegister ? 'Registrarme con Google (1-Clic)' : 'Iniciar Sesión con Google (1-Clic)'}
             </button>
 
             <div className="relative flex py-1 items-center">
               <div className="flex-grow border-t border-slate-800"></div>
-              <span className="flex-shrink mx-3 text-[11px] text-slate-500 font-medium">O usa tu correo</span>
+              <span className="flex-shrink mx-3 text-[11px] text-slate-500 font-medium">
+                {isRegister ? 'O regístrate con tu correo' : 'O usa tu correo'}
+              </span>
               <div className="flex-grow border-t border-slate-800"></div>
             </div>
           </div>
