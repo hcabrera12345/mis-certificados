@@ -121,3 +121,33 @@ VALUES
     'Salud y Tecnologia'
 )
 ON CONFLICT DO NOTHING;
+
+
+-- =============================================================
+-- TRIGGER AUTOMÁTICO PARA REGISTRO CON GOOGLE OAUTH
+-- Inserta automáticamente al usuario en public.profiles al registrarse con Google
+-- =============================================================
+
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.profiles (id, email, full_name, role, avatar_url)
+  VALUES (
+    NEW.id,
+    NEW.email,
+    COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'name', split_part(NEW.email, '@', 1)),
+    COALESCE(NEW.raw_user_meta_data->>'role', 'student'),
+    NEW.raw_user_meta_data->>'avatar_url'
+  )
+  ON CONFLICT (id) DO UPDATE
+  SET full_name = EXCLUDED.full_name,
+      avatar_url = EXCLUDED.avatar_url;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+-- Trigger ejecutado tras cada inserción en auth.users
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();

@@ -19,31 +19,31 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  // 1-Click Google OAuth Sign In
+  // 1-Click Google OAuth Sign In & Auto-Registration Protocol
   const handleGoogleSignIn = async () => {
     setLoading(true);
     setErrorMsg('');
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
+      const redirectUrl = typeof window !== 'undefined' ? `${window.location.origin}` : 'https://miscertificados.quinto.app';
+
+      const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: typeof window !== 'undefined' ? `${window.location.origin}` : undefined
+          redirectTo: redirectUrl,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent'
+          }
         }
       });
+
       if (error) {
-        onSuccess({
-          email: 'alumno.google@quinto.app',
-          name: 'Estudiante Google',
-          role: 'student'
-        });
+        // Clear guidance if Google provider is not yet activated in Supabase console
+        setErrorMsg('Autenticación Google: Para conectar Google en vivo en Supabase, activa la opción en Supabase Dashboard -> Authentication -> Providers -> Google.');
+        setLoading(false);
       }
     } catch (err: any) {
-      onSuccess({
-        email: 'alumno.google@quinto.app',
-        name: 'Estudiante Google',
-        role: 'student'
-      });
-    } finally {
+      setErrorMsg(err.message || 'Error en autenticación Google');
       setLoading(false);
     }
   };
@@ -166,7 +166,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
         </div>
 
         {errorMsg && (
-          <div className="bg-red-950/60 border border-red-500/40 text-red-300 p-3 rounded-xl text-xs text-center font-medium">
+          <div className="bg-red-950/60 border border-red-500/40 text-red-300 p-3 rounded-xl text-xs text-center font-medium leading-relaxed">
             {errorMsg}
           </div>
         )}
