@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Esquema de Backend & Base de Datos (v2.0)</title>
+    <style>
+        :root {
+            --bg-color: #080c14;
+            --card-bg: #111827;
+            --border-color: #1f2937;
+            --cyan: #06b6d4;
+            --purple: #8b5cf6;
+            --emerald: #10b981;
+            --text-main: #f9fafb;
+            --text-muted: #9ca3af;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Consolas', monospace, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-main); padding: 40px 20px; line-height: 1.5; }
+        .container { max-width: 1250px; margin: 0 auto; }
+
+        header { text-align: center; margin-bottom: 40px; font-family: sans-serif; }
+        header h1 { font-size: 2.3rem; color: var(--text-main); }
+        header h1 span { color: var(--cyan); }
+
+        .tables-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); gap: 25px; margin-bottom: 40px; }
+        .db-table { background: #161e2e; border: 1px solid var(--border-color); border-radius: 12px; overflow: hidden; }
+        .table-header { background: #1f293d; padding: 12px 18px; display: flex; justify-content: space-between; align-items: center; }
+        .table-name { font-weight: 700; color: var(--cyan); }
+
+        table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
+        th, td { padding: 9px 14px; border-bottom: 1px solid rgba(255,255,255,0.05); }
+        th { background: rgba(0,0,0,0.3); color: var(--text-muted); }
+        
+        .pk { color: #f59e0b; font-weight: 700; }
+        .fk { color: var(--purple); font-weight: 700; }
+        .type { color: #ec4899; }
+
+        pre { background: #050811; padding: 20px; border-radius: 10px; color: #a7f3d0; border: 1px solid rgba(16, 185, 129, 0.2); overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Esquema Backend Supabase <span>v2.0</span></h1>
+            <p>Tablas para Comprobantes OCR, Notificaciones WhatsApp, Plantillas y RLS</p>
+        </header>
+
+        <div class="tables-grid">
+            <!-- PAYMENT RECEIPTS (OCR) -->
+            <div class="db-table">
+                <div class="table-header">
+                    <span class="table-name">public.payment_receipts</span>
+                    <span class="table-type">Comprobantes & OCR AI</span>
+                </div>
+                <table>
+                    <thead><tr><th>Columna</th><th>Tipo</th><th>Notas</th></tr></thead>
+                    <tbody>
+                        <tr><td class="pk">id</td><td class="type">UUID</td><td>PK, gen_random_uuid()</td></tr>
+                        <tr><td class="fk">student_id</td><td class="type">UUID</td><td>FK -> profiles.id</td></tr>
+                        <tr><td>receipt_image_url</td><td class="type">TEXT</td><td>NOT NULL (Supabase Storage)</td></tr>
+                        <tr><td>extracted_op_code</td><td class="type">VARCHAR(100)</td><td>Extraído por OCR / Index</td></tr>
+                        <tr><td>extracted_amount</td><td class="type">NUMERIC(10,2)</td><td>Monto leído por IA</td></tr>
+                        <tr><td>ocr_status</td><td class="type">VARCHAR(30)</td><td>'pending'|'parsed'|'failed'</td></tr>
+                        <tr><td>admin_approval_status</td><td class="type">VARCHAR(30)</td><td>'pending'|'approved'|'rejected'</td></tr>
+                    </tbody>
+                </table>
+            </div>
+
+            <!-- CERTIFICATE TEMPLATES -->
+            <div class="db-table">
+                <div class="table-header">
+                    <span class="table-name">public.certificate_templates</span>
+                    <span class="table-type">Plantillas Personalizadas</span>
+                </div>
+                <table>
+                    <thead><tr><th>Columna</th><th>Tipo</th><th>Notas</th></tr></thead>
+                    <tbody>
+                        <tr><td class="pk">id</td><td class="type">UUID</td><td>PK, gen_random_uuid()</td></tr>
+                        <tr><td class="fk">course_id</td><td class="type">UUID</td><td>FK -> courses.id</td></tr>
+                        <tr><td>background_url</td><td class="type">TEXT</td><td>Fondo PNG/SVG (300 DPI)</td></tr>
+                        <tr><td>fields_config</td><td class="type">JSONB</td><td>Coordenadas X, Y, fuentes, tamaños</td></tr>
+                        <tr><td>is_active</td><td class="type">BOOLEAN</td><td>DEFAULT true</td></tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+
+        <h2 style="font-family: sans-serif; color: var(--emerald); margin-bottom: 15px;">Migración SQL: Función de Verificación y RLS</h2>
+        <pre>
+-- 1. Tabla de comprobantes con deduplicación de operación
+CREATE TABLE public.payment_receipts (
+    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+    student_id UUID REFERENCES public.profiles(id) ON DELETE CASCADE,
+    receipt_image_url TEXT NOT NULL,
+    receipt_hash VARCHAR(64) UNIQUE, -- Para evitar subir la misma foto
+    extracted_op_code VARCHAR(100),
+    extracted_amount NUMERIC(10,2),
+    ocr_status VARCHAR(30) DEFAULT 'pending',
+    admin_approval_status VARCHAR(30) DEFAULT 'pending',
+    created_at TIMESTAMPTZ DEFAULT NOW()
+);
+
+-- 2. Habilitar RLS en comprobantes
+ALTER TABLE public.payment_receipts ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Estudiantes insertan y ven sus propios comprobantes"
+ON public.payment_receipts FOR ALL
+USING (auth.uid() = student_id);
+
+CREATE POLICY "Admins gestionan todos los comprobantes"
+ON public.payment_receipts FOR ALL
+USING (
+    EXISTS (
+        SELECT 1 FROM public.profiles
+        WHERE profiles.id = auth.uid() AND profiles.role = 'admin'
+    )
+);
+        </pre>
+    </div>
+</body>
+</html>

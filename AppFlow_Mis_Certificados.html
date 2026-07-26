@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AppFlow Interactivo - Mis Certificados (v2.0)</title>
+    <style>
+        :root {
+            --bg-color: #0b0f19;
+            --card-bg: rgba(30, 41, 59, 0.7);
+            --border-color: rgba(255, 255, 255, 0.1);
+            --cyan: #06b6d4;
+            --purple: #8b5cf6;
+            --emerald: #10b981;
+            --amber: #f59e0b;
+            --text-main: #f8fafc;
+            --text-muted: #94a3b8;
+        }
+
+        * { box-sizing: border-box; margin: 0; padding: 0; font-family: 'Segoe UI', system-ui, sans-serif; }
+        body { background-color: var(--bg-color); color: var(--text-main); padding: 40px 20px; line-height: 1.6; }
+        .container { max-width: 1200px; margin: 0 auto; }
+        
+        header { text-align: center; margin-bottom: 40px; }
+        header h1 { font-size: 2.5rem; color: var(--text-main); }
+        header h1 span { color: var(--cyan); }
+        header p { color: var(--text-muted); font-size: 1.1rem; }
+
+        .flow-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(340px, 1fr)); gap: 25px; margin-bottom: 50px; }
+        .flow-card { background: var(--card-bg); backdrop-filter: blur(12px); border: 1px solid var(--border-color); border-radius: 16px; padding: 25px; transition: all 0.3s ease; }
+        .flow-card:hover { transform: translateY(-5px); border-color: var(--cyan); }
+        
+        .card-title { font-size: 1.2rem; font-weight: 700; color: var(--cyan); margin-bottom: 10px; }
+        .action-list { list-style: none; margin-top: 15px; }
+        .action-item { background: rgba(15, 23, 42, 0.6); padding: 10px 14px; border-radius: 8px; margin-bottom: 10px; border-left: 3px solid var(--cyan); font-size: 0.95rem; }
+        .action-item strong { color: var(--text-main); display: block; }
+        .action-item span { color: var(--text-muted); font-size: 0.85rem; }
+
+        table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        th, td { padding: 12px; border-bottom: 1px solid var(--border-color); text-align: left; }
+        th { background: rgba(15, 23, 42, 0.8); color: var(--cyan); }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>AppFlow Interactivo <span>v2.0</span></h1>
+            <p>Flujo con Carga de Comprobante QR, Lectura OCR por IA y Notificación por WhatsApp</p>
+        </header>
+
+        <div class="flow-grid">
+            <div class="flow-card">
+                <div class="card-title">1. Solicitud & QR Estático</div>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">El estudiante finaliza el curso y solicita su certificado.</p>
+                <ul class="action-list">
+                    <li class="action-item">
+                        <strong>[Acción] Escanear QR Genérico</strong>
+                        <span>Muestra QR estático de pago (Yape/Plin/Banco).</span>
+                    </li>
+                    <li class="action-item">
+                        <strong>[Acción] Subir Foto de Comprobante</strong>
+                        <span>El alumno adjunta la captura del pago realizado.</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="flow-card">
+                <div class="card-title">2. Lectura Automática OCR (IA)</div>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">Worker asíncrono procesa la imagen cargada.</p>
+                <ul class="action-list">
+                    <li class="action-item">
+                        <strong>[IA Pipeline] Extracción de Datos</strong>
+                        <span>Lee Nº Operación, Monto, Fecha y Emisor en <1s.</span>
+                    </li>
+                    <li class="action-item">
+                        <strong>[Filtro Anti-Fraude] Verificación Hash</strong>
+                        <span>Comprueba que el comprobante no sea duplicado.</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="flow-card">
+                <div class="card-title">3. Notificación WhatsApp Admin</div>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">Aviso push al teléfono del Administrador.</p>
+                <ul class="action-list">
+                    <li class="action-item">
+                        <strong>[Push WhatsApp] Mensaje con Detalles</strong>
+                        <span>Envía datos leídos y enlace de aprobación directa.</span>
+                    </li>
+                    <li class="action-item">
+                        <strong>[Acción Admin] Dar "OK" / Aprobar</strong>
+                        <span>El admin aprueba la transacción desde WhatsApp o Dashboard.</span>
+                    </li>
+                </ul>
+            </div>
+
+            <div class="flow-card">
+                <div class="card-title">4. Liberación de Certificado SHA-256</div>
+                <p style="color: var(--text-muted); font-size: 0.9rem;">Generación e impresión del documento oficial.</p>
+                <ul class="action-list">
+                    <li class="action-item">
+                        <strong>[Render Engine] PDF con Sello QR</strong>
+                        <span>Combina la plantilla personalizada con los datos del graduado.</span>
+                    </li>
+                    <li class="action-item">
+                        <strong>[Notificación Alumno] Certificado Listo</strong>
+                        <span>Alerta al alumno para descargar su PDF/PNG.</span>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <h2 style="color: var(--cyan); margin-bottom: 15px;">Matriz de Eventos y Endpoints API</h2>
+        <table>
+            <thead>
+                <tr>
+                    <th>Pantalla</th>
+                    <th>Acción Usuario / Sistema</th>
+                    <th>API Endpoint / Evento</th>
+                    <th>Resultado</th>
+                </tr>
+            </thead>
+            <tbody>
+                <tr>
+                    <td>Formulario Pago</td>
+                    <td>Subir comprobante imagen</td>
+                    <td>POST /api/payments/upload-receipt</td>
+                    <td>Dispara Worker OCR Vision</td>
+                </tr>
+                <tr>
+                    <td>Worker Backend</td>
+                    <td>Análisis de IA completado</td>
+                    <td>POST /api/webhooks/whatsapp-notify</td>
+                    <td>Mensaje Push a WhatsApp Admin</td>
+                </tr>
+                <tr>
+                    <td>WhatsApp Admin</td>
+                    <td>Click en "Aprobar Pago" / OK</td>
+                    <td>POST /api/payments/approve</td>
+                    <td>Cambia status a 'approved' & Emite PDF</td>
+                </tr>
+                <tr>
+                    <td>Admin Dashboard</td>
+                    <td>Subir plantilla de certificado</td>
+                    <td>POST /api/templates/upload</td>
+                    <td>Guarda trasfondo y coordenadas JSON</td>
+                </tr>
+            </tbody>
+        </table>
+    </div>
+</body>
+</html>
