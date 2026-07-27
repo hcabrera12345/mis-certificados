@@ -2,6 +2,7 @@
 
 import React from 'react';
 import { Award, BookOpen, ShieldCheck, LayoutDashboard, LogIn, LogOut, User } from 'lucide-react';
+import { QuintoLogo } from './QuintoLogo';
 import { UserRole } from '@/types';
 
 interface NavbarProps {
@@ -32,11 +33,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           className="flex items-center gap-3 cursor-pointer group" 
           onClick={() => setCurrentTab('courses')}
         >
-          <img 
-            src="/quinto_eje_logo.png" 
-            alt="Quinto Eje Ingeniería" 
-            className="h-10 sm:h-12 w-auto object-contain transition-transform group-hover:scale-105"
-          />
+          <QuintoLogo className="h-10 sm:h-12 transition-transform group-hover:scale-105" />
           <div className="hidden lg:block pl-2 border-l border-slate-800">
             <span className="font-extrabold text-sm text-white tracking-tight flex items-center gap-1.5">
               Mis Certificados

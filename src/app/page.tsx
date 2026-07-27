@@ -232,6 +232,8 @@ export default function Home() {
           <StudentCourses
             paymentQrUrl={systemSettings.payment_qr_url}
             onAddReceipt={handleCreateReceipt}
+            isAuthenticated={!!userProfile}
+            onOpenAuth={() => setShowAuthModal(true)}
           />
         )}
 

@@ -9,6 +9,8 @@ import { PaymentOCRModal } from './PaymentOCRModal';
 interface StudentCoursesProps {
   paymentQrUrl: string;
   onAddReceipt: (receipt: PaymentReceipt) => void;
+  isAuthenticated: boolean;
+  onOpenAuth: () => void;
 }
 
 export const StudentCourses: React.FC<StudentCoursesProps> = ({ paymentQrUrl, onAddReceipt }) => {
