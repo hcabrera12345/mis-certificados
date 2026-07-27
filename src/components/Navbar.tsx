@@ -35,8 +35,8 @@ export const Navbar: React.FC<NavbarProps> = ({
         >
           <img 
             src="/quinto_eje_exact_logo.png" 
-            alt="QUINTO EJE INGENIERÍA" 
-            className="h-9 sm:h-11 w-auto object-contain transition-transform group-hover:scale-105 filter drop-shadow-[0_0_12px_rgba(6,182,212,0.3)]"
+            alt="Quinto Eje Ingeniería" 
+            className="h-10 sm:h-12 w-auto object-contain transition-transform group-hover:scale-105"
           />
           <div className="hidden lg:block pl-2 border-l border-slate-800">
             <span className="font-extrabold text-sm text-white tracking-tight flex items-center gap-1.5">
