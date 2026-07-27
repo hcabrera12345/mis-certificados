@@ -39,7 +39,7 @@ export default function Home() {
     }
     initData();
 
-    // 2. Función helper para procesar la sesión activa de Supabase
+    // 2. Procesador unificado de sesión
     const processSession = (session: any) => {
       if (session?.user) {
         const email = session.user.email || '';
@@ -50,21 +50,41 @@ export default function Home() {
         setUserProfile({ email, name, role });
         setUserRole(role);
 
-        // Si se retorna con el hash de OAuth en la URL, limpiar la URL manteniendo la página limpia
-        if (typeof window !== 'undefined' && window.location.hash.includes('access_token')) {
+        // Limpiar la URL manteniendo la estética limpia
+        if (typeof window !== 'undefined' && (window.location.search.includes('code=') || window.location.hash.includes('access_token'))) {
           window.history.replaceState(null, '', window.location.pathname);
         }
       }
     };
 
-    // 3. Verificación inicial de la sesión
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      processSession(session);
-    });
+    // 3. Manejador de intercambio de código OAuth PKCE en el cliente
+    async function checkOAuthCallback() {
+      if (typeof window !== 'undefined') {
+        const urlParams = new URLSearchParams(window.location.search);
+        const code = urlParams.get('code');
+        
+        if (code) {
+          try {
+            const { data, error } = await supabase.auth.exchangeCodeForSession(code);
+            if (!error && data.session) {
+              processSession(data.session);
+              return;
+            }
+          } catch (e) {
+            console.error('Error intercambiando código OAuth PKCE:', e);
+          }
+        }
+      }
 
-    // 4. Listener reactivo en tiempo real para eventos SIGNED_IN (Google 1-Clic o Formulario)
+      // Verificación regular de sesión activa
+      const { data: { session } } = await supabase.auth.getSession();
+      processSession(session);
+    }
+
+    checkOAuthCallback();
+
+    // 4. Listener reactivo en tiempo real para eventos de autenticación (SIGNED_IN)
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('Supabase Auth Event:', event);
       if (session) {
         processSession(session);
       } else if (event === 'SIGNED_OUT') {
