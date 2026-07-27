@@ -1,7 +1,7 @@
 -- =============================================================
--- ESQUEMA DE BASE DE DATOS SUPABASE: MIS CERTIFICADOS (v2.4 FINAL)
+-- ESQUEMA DE BASE DE DATOS SUPABASE: MIS CERTIFICADOS (v3.0 PROD)
 -- PROYECTO: Mis Certificados (Ecosistema Quinto)
--- CURSOS EXACTOS EXTRAÍDOS DE LOS DOCUMENTOS PDF DE LA BASE DE CONOCIMIENTO DE QUINTO
+-- POLÍTICAS RLS Y TRIGGER DE REGISTRO AUTOMÁTICO DE USUARIOS
 -- =============================================================
 
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
@@ -71,23 +71,72 @@ CREATE TABLE IF NOT EXISTS public.deliveries_future (
     created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
 );
 
-CREATE TABLE IF NOT EXISTS public.certificate_templates (
-    id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
-    course_id UUID REFERENCES public.courses(id) ON DELETE CASCADE,
-    background_url TEXT NOT NULL,
-    fields_config JSONB NOT NULL,
-    is_active BOOLEAN DEFAULT true,
-    created_at TIMESTAMP WITH TIME ZONE DEFAULT timezone('utc'::text, now()) NOT NULL
-);
-
+-- RLS ENABLING
 ALTER TABLE public.profiles ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.courses ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.payment_receipts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.certificates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.deliveries_future ENABLE ROW LEVEL SECURITY;
-ALTER TABLE public.certificate_templates ENABLE ROW LEVEL SECURITY;
 
--- SEED DATA CON LOS TITULOS EXACTOS DE LOS ARCHIVOS PDF DE LA BASE DE CONOCIMIENTO DE QUINTO
+-- POLÍTICAS RLS PERMISIVAS PARA PROFILES
+DROP POLICY IF EXISTS "Public read profiles" ON public.profiles;
+CREATE POLICY "Public read profiles" ON public.profiles FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public insert profiles" ON public.profiles;
+CREATE POLICY "Public insert profiles" ON public.profiles FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Public update profiles" ON public.profiles;
+CREATE POLICY "Public update profiles" ON public.profiles FOR UPDATE USING (true);
+
+-- POLÍTICAS RLS PARA COURSES
+DROP POLICY IF EXISTS "Public read courses" ON public.courses;
+CREATE POLICY "Public read courses" ON public.courses FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public all courses" ON public.courses;
+CREATE POLICY "Public all courses" ON public.courses FOR ALL USING (true);
+
+-- POLÍTICAS RLS PARA PAYMENT RECEIPTS
+DROP POLICY IF EXISTS "Public read receipts" ON public.payment_receipts;
+CREATE POLICY "Public read receipts" ON public.payment_receipts FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public insert receipts" ON public.payment_receipts;
+CREATE POLICY "Public insert receipts" ON public.payment_receipts FOR INSERT WITH CHECK (true);
+
+DROP POLICY IF EXISTS "Public update receipts" ON public.payment_receipts;
+CREATE POLICY "Public update receipts" ON public.payment_receipts FOR UPDATE USING (true);
+
+-- POLÍTICAS RLS PARA CERTIFICATES
+DROP POLICY IF EXISTS "Public read certificates" ON public.certificates;
+CREATE POLICY "Public read certificates" ON public.certificates FOR SELECT USING (true);
+
+DROP POLICY IF EXISTS "Public insert certificates" ON public.certificates;
+CREATE POLICY "Public insert certificates" ON public.certificates FOR INSERT WITH CHECK (true);
+
+-- TRIGGER AUTOMÁTICO PARA REGISTRO DE NUEVOS ALUMNOS EN SUPABASE (GOOGLE + FORMULARIO)
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS TRIGGER AS $$
+BEGIN
+  INSERT INTO public.profiles (id, email, full_name, role, avatar_url)
+  VALUES (
+    NEW.id,
+    NEW.email,
+    COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'name', split_part(NEW.email, '@', 1)),
+    COALESCE(NEW.raw_user_meta_data->>'role', 'student'),
+    NEW.raw_user_meta_data->>'avatar_url'
+  )
+  ON CONFLICT (id) DO UPDATE
+  SET full_name = EXCLUDED.full_name,
+      avatar_url = EXCLUDED.avatar_url;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+
+-- SEED DATA DE CURSOS REALES DE QUINTO
 INSERT INTO public.courses (id, title, description, academic_hours, instructor_name, price_usd, image_url, category)
 VALUES 
 (
@@ -121,33 +170,3 @@ VALUES
     'Salud y Tecnologia'
 )
 ON CONFLICT DO NOTHING;
-
-
--- =============================================================
--- TRIGGER AUTOMÁTICO PARA REGISTRO CON GOOGLE OAUTH
--- Inserta automáticamente al usuario en public.profiles al registrarse con Google
--- =============================================================
-
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS TRIGGER AS $$
-BEGIN
-  INSERT INTO public.profiles (id, email, full_name, role, avatar_url)
-  VALUES (
-    NEW.id,
-    NEW.email,
-    COALESCE(NEW.raw_user_meta_data->>'full_name', NEW.raw_user_meta_data->>'name', split_part(NEW.email, '@', 1)),
-    COALESCE(NEW.raw_user_meta_data->>'role', 'student'),
-    NEW.raw_user_meta_data->>'avatar_url'
-  )
-  ON CONFLICT (id) DO UPDATE
-  SET full_name = EXCLUDED.full_name,
-      avatar_url = EXCLUDED.avatar_url;
-  RETURN NEW;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER;
-
--- Trigger ejecutado tras cada inserción en auth.users
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
