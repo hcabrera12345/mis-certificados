@@ -49,7 +49,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         </div>
 
         {/* Dynamic Navigation Tabs */}
-        <nav className="flex items-center gap-1 bg-slate-900/80 p-1.5 rounded-2xl border border-slate-800 text-xs font-semibold">
+        <nav className="flex items-center gap-1 bg-slate-900/80 p-1 sm:p-1.5 rounded-2xl border border-slate-800 text-[11px] sm:text-xs font-semibold overflow-x-auto max-w-[50vw] sm:max-w-none no-scrollbar">
           <button
             onClick={() => setCurrentTab('courses')}
             className={`px-4 py-2 rounded-xl transition-all flex items-center gap-2 ${
