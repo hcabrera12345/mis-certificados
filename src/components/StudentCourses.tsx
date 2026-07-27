@@ -13,9 +13,17 @@ interface StudentCoursesProps {
   onOpenAuth: () => void;
 }
 
-export const StudentCourses: React.FC<StudentCoursesProps> = ({ paymentQrUrl, onAddReceipt }) => {
+export const StudentCourses: React.FC<StudentCoursesProps> = ({ paymentQrUrl, onAddReceipt, isAuthenticated, onOpenAuth }) => {
   const [courses, setCourses] = useState<Course[]>([]);
   const [selectedCourseForPayment, setSelectedCourseForPayment] = useState<Course | null>(null);
+
+  const handleEnrollClick = (course: Course) => {
+    if (!isAuthenticated) {
+      onOpenAuth();
+      return;
+    }
+    setSelectedCourseForPayment(course);
+  };
 
   useEffect(() => {
     async function load() {
@@ -66,7 +74,7 @@ export const StudentCourses: React.FC<StudentCoursesProps> = ({ paymentQrUrl, on
               </div>
 
               <button
-                onClick={() => setSelectedCourseForPayment(course)}
+                onClick={() => handleEnrollClick(course)}
                 className="px-4 py-2.5 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-extrabold rounded-xl text-xs shadow-lg shadow-cyan-500/20 transition-all flex items-center gap-1.5"
               >
                 <QrCode className="w-4 h-4" /> Solicitar Certificado
