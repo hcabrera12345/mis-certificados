@@ -28,7 +28,7 @@ export default function Home() {
   const [verifyHash, setVerifyHash] = useState<string>('');
 
   useEffect(() => {
-    // 1. Carga de Datos desde la Base de Datos
+    // 1. Carga de Datos desde Supabase DB
     async function initData() {
       const dbCourses = await getCoursesFromDB();
       const dbReceipts = await getReceiptsFromDB();
@@ -40,58 +40,79 @@ export default function Home() {
     }
     initData();
 
-    // 2. Procesador unificado de sesión para Google y Formulario
-    const processSession = (session: any) => {
-      if (session?.user) {
-        const email = session.user.email || '';
-        const isUserAdmin = email.toLowerCase() === 'admin@quinto.app' || session.user.user_metadata?.role === 'admin';
-        const name = session.user.user_metadata?.full_name || session.user.user_metadata?.name || email.split('@')[0] || 'Estudiante Quinto';
-        const role: UserRole = isUserAdmin ? 'admin' : 'student';
+    // 2. Procesador unificado de perfil
+    const applyUserProfile = (email: string, fullName?: string, userRoleInput?: string) => {
+      const isUserAdmin = email.toLowerCase() === 'admin@quinto.app' || userRoleInput === 'admin';
+      const name = fullName || email.split('@')[0] || 'Estudiante Quinto';
+      const role: UserRole = isUserAdmin ? 'admin' : 'student';
 
-        setUserProfile({ email, name, role });
-        setUserRole(role);
-        setAuthDebugMsg(`Sesión activa: ${name} (${email})`);
-
-        // Limpiar parámetros hash u OAuth de la URL manteniendo una interfaz limpia
-        if (typeof window !== 'undefined' && (window.location.hash.includes('access_token') || window.location.search.includes('code='))) {
-          window.history.replaceState(null, '', window.location.pathname);
-        }
-      }
+      setUserProfile({ email, name, role });
+      setUserRole(role);
+      setAuthDebugMsg(`Bienvenido ${name} (${email})`);
     };
 
-    // 3. Verificación de sesión en la URL y cliente
+    // 3. Extractor Directo Instantáneo de Tokens JWT Hash (Google OAuth)
+    const checkDirectHashToken = () => {
+      if (typeof window !== 'undefined' && window.location.hash.includes('access_token=')) {
+        try {
+          const hashParams = new URLSearchParams(window.location.hash.substring(1));
+          const accessToken = hashParams.get('access_token');
+          if (accessToken) {
+            const payloadBase64 = accessToken.split('.')[1];
+            const decodedJson = JSON.parse(atob(payloadBase64));
+            const email = decodedJson.email || '';
+            const fullName = decodedJson.user_metadata?.full_name || decodedJson.user_metadata?.name || email.split('@')[0];
+            
+            if (email) {
+              applyUserProfile(email, fullName, decodedJson.user_metadata?.role);
+              window.history.replaceState(null, '', window.location.pathname);
+              return true;
+            }
+          }
+        } catch (e) {
+          console.error('Error decodificando token hash:', e);
+        }
+      }
+      return false;
+    };
+
+    const hasHashUser = checkDirectHashToken();
+
+    // 4. Verificación regular en cliente Supabase SDK
     async function checkAuthSession() {
+      if (hasHashUser) return;
+
       if (typeof window !== 'undefined') {
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get('code');
-        const hash = window.location.hash;
-
         if (code) {
           try {
-            setAuthDebugMsg('Autenticando con Google OAuth...');
+            setAuthDebugMsg('Verificando credencial de Google...');
             const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-            if (!error && data.session) {
-              processSession(data.session);
+            if (!error && data.session?.user) {
+              const u = data.session.user;
+              applyUserProfile(u.email || '', u.user_metadata?.full_name || u.user_metadata?.name, u.user_metadata?.role);
+              window.history.replaceState(null, '', window.location.pathname);
               return;
             }
-          } catch (e: any) {
-            console.log('Intento PKCE alternativo...');
-          }
+          } catch (e) {}
         }
       }
 
-      // Verificación directa de sesión en localStorage / Supabase SDK
       const { data: { session } } = await supabase.auth.getSession();
-      processSession(session);
+      if (session?.user) {
+        const u = session.user;
+        applyUserProfile(u.email || '', u.user_metadata?.full_name || u.user_metadata?.name, u.user_metadata?.role);
+      }
     }
 
     checkAuthSession();
 
-    // 4. Listener reactivo para evento SIGNED_IN de Google y Supabase Auth
+    // 5. Listener de cambio de estado en vivo
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      console.log('Supabase Auth Event:', event, session);
-      if (session) {
-        processSession(session);
+      if (session?.user) {
+        const u = session.user;
+        applyUserProfile(u.email || '', u.user_metadata?.full_name || u.user_metadata?.name, u.user_metadata?.role);
       } else if (event === 'SIGNED_OUT') {
         setUserProfile(null);
         setUserRole('student');
@@ -184,8 +205,8 @@ export default function Home() {
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100 selection:bg-cyan-500 selection:text-white font-sans antialiased">
       {authDebugMsg && (
-        <div className="bg-gradient-to-r from-cyan-950 to-blue-950 border-b border-cyan-500/40 text-cyan-200 px-4 py-2 text-xs text-center font-mono font-bold flex items-center justify-between">
-          <span>🔍 Estado de Autenticación: {authDebugMsg}</span>
+        <div className="bg-gradient-to-r from-cyan-950 to-blue-950 border-b border-cyan-500/40 text-cyan-200 px-4 py-2 text-xs text-center font-mono font-bold flex items-center justify-between shadow-lg">
+          <span>🟢 Estado de Autenticación: {authDebugMsg}</span>
           <button onClick={() => setAuthDebugMsg('')} className="text-slate-400 hover:text-white ml-4">✕</button>
         </div>
       )}
