@@ -52,7 +52,7 @@ export const StudentCourses: React.FC<StudentCoursesProps> = ({ paymentQrUrl, on
               </div>
 
               <div className="flex items-center justify-between text-xs text-slate-400 pt-2 border-t border-slate-800">
-                <span className="flex items-center gap-1"><Clock className="w-3.5 h-3.5 text-cyan-400" /> {course.academic_hours} hrs lectivas</span>
+                
                 <span className="flex items-center gap-1"><Users className="w-3.5 h-3.5 text-amber-400" /> {course.total_students || 30} alumnos</span>
               </div>
             </div>

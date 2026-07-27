@@ -122,3 +122,17 @@ export async function updateReceiptStatusInDB(receiptId: string, status: 'approv
     console.error('Error updating receipt in DB:', err);
   }
 }
+
+export async function deleteCourseFromDB(courseId: string) {
+  try {
+    const { error } = await supabase
+      .from('courses')
+      .delete()
+      .eq('id', courseId);
+    if (error) throw error;
+    return true;
+  } catch (err) {
+    console.error('Error borrando curso de Supabase DB:', err);
+    return false;
+  }
+}

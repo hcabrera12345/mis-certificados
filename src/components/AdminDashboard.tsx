@@ -12,6 +12,7 @@ interface AdminDashboardProps {
   deliveries: any[];
   systemSettings: SystemSettings;
   onUpdateCourses: (updatedCourses: Course[]) => void;
+  onDeleteCourse?: (courseId: string) => void;
   onApproveReceipt: (receipt: PaymentReceipt) => void;
   onRejectReceipt: (receiptId: string) => void;
   onUpdateCertificate: (updatedCert: Certificate) => void;
@@ -26,6 +27,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   deliveries,
   systemSettings,
   onUpdateCourses,
+  onDeleteCourse,
   onApproveReceipt,
   onRejectReceipt,
   onUpdateCertificate,

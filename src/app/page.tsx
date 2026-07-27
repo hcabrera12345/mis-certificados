@@ -10,7 +10,7 @@ import { AuthModal } from '@/components/AuthModal';
 import { UserRole, PaymentReceipt, Certificate, Course, SystemSettings } from '@/types';
 import { INITIAL_RECEIPTS, INITIAL_CERTIFICATES, MOCK_COURSES, DEFAULT_SETTINGS } from '@/lib/mockData';
 import { sendStudentReleaseNotification } from '@/lib/notificationService';
-import { getCoursesFromDB, getReceiptsFromDB, getCertificatesFromDB, saveReceiptToDB, saveCertificateToDB, updateReceiptStatusInDB } from '@/lib/supabaseService';
+import { getCoursesFromDB, getReceiptsFromDB, getCertificatesFromDB, saveReceiptToDB, saveCertificateToDB, updateReceiptStatusInDB, deleteCourseFromDB } from '@/lib/supabaseService';
 import { supabase } from '@/lib/supabaseClient';
 
 export default function Home() {
@@ -185,6 +185,12 @@ export default function Home() {
     await updateReceiptStatusInDB(receiptId, 'rejected');
   };
 
+    const handleDeleteCourse = async (courseId: string) => {
+    const updated = courses.filter((c) => c.id !== courseId);
+    setCourses(updated);
+    await deleteCourseFromDB(courseId);
+  };
+
   const handleUpdateCourses = (updatedCourses: Course[]) => {
     setCourses(updatedCourses);
   };
@@ -248,6 +254,7 @@ export default function Home() {
             deliveries={deliveries}
             systemSettings={systemSettings}
             onUpdateCourses={handleUpdateCourses}
+            onDeleteCourse={handleDeleteCourse}
             onApproveReceipt={handleApproveReceipt}
             onRejectReceipt={handleRejectReceipt}
             onUpdateCertificate={handleUpdateCertificate}
