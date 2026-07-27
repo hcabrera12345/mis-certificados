@@ -15,10 +15,10 @@ import { supabase } from '@/lib/supabaseClient';
 
 export default function Home() {
   const [currentTab, setCurrentTab] = useState<string>('courses');
-  const [authDebugMsg, setAuthDebugMsg] = useState<string>('');
   const [userRole, setUserRole] = useState<UserRole>('student');
   const [userProfile, setUserProfile] = useState<{ email: string; name: string; role: UserRole } | null>(null);
   const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
+  const [authDebugMsg, setAuthDebugMsg] = useState<string>('');
 
   const [courses, setCourses] = useState<Course[]>(MOCK_COURSES);
   const [receipts, setReceipts] = useState<PaymentReceipt[]>(INITIAL_RECEIPTS);
@@ -40,7 +40,7 @@ export default function Home() {
     }
     initData();
 
-    // 2. Procesador unificado de sesión
+    // 2. Procesador unificado de sesión para Google y Formulario
     const processSession = (session: any) => {
       if (session?.user) {
         const email = session.user.email || '';
@@ -50,51 +50,52 @@ export default function Home() {
 
         setUserProfile({ email, name, role });
         setUserRole(role);
+        setAuthDebugMsg(`Sesión activa: ${name} (${email})`);
 
-        // Limpiar la URL manteniendo la estética limpia
-        if (typeof window !== 'undefined' && (window.location.search.includes('code=') || window.location.hash.includes('access_token'))) {
+        // Limpiar parámetros hash u OAuth de la URL manteniendo una interfaz limpia
+        if (typeof window !== 'undefined' && (window.location.hash.includes('access_token') || window.location.search.includes('code='))) {
           window.history.replaceState(null, '', window.location.pathname);
         }
       }
     };
 
-    // 3. Manejador de intercambio de código OAuth PKCE en el cliente
-    async function checkOAuthCallback() {
+    // 3. Verificación de sesión en la URL y cliente
+    async function checkAuthSession() {
       if (typeof window !== 'undefined') {
         const urlParams = new URLSearchParams(window.location.search);
         const code = urlParams.get('code');
-        
+        const hash = window.location.hash;
+
         if (code) {
           try {
-            setAuthDebugMsg('Procesando código de autenticación de Google...');
+            setAuthDebugMsg('Autenticando con Google OAuth...');
             const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-            if (error) {
-              setAuthDebugMsg(`Error de Google Auth en Supabase: ${error.message}`);
-            } else if (data.session) {
-              setAuthDebugMsg(`¡Autenticación exitosa! Bienvenido ${data.session.user.email}`);
+            if (!error && data.session) {
               processSession(data.session);
               return;
             }
           } catch (e: any) {
-            setAuthDebugMsg(`Excepción en Auth Callback: ${e.message}`);
+            console.log('Intento PKCE alternativo...');
           }
         }
       }
 
-      // Verificación regular de sesión activa
+      // Verificación directa de sesión en localStorage / Supabase SDK
       const { data: { session } } = await supabase.auth.getSession();
       processSession(session);
     }
 
-    checkOAuthCallback();
+    checkAuthSession();
 
-    // 4. Listener reactivo en tiempo real para eventos de autenticación (SIGNED_IN)
+    // 4. Listener reactivo para evento SIGNED_IN de Google y Supabase Auth
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Supabase Auth Event:', event, session);
       if (session) {
         processSession(session);
       } else if (event === 'SIGNED_OUT') {
         setUserProfile(null);
         setUserRole('student');
+        setAuthDebugMsg('');
       }
     });
 
@@ -117,6 +118,7 @@ export default function Home() {
     setUserProfile(null);
     setUserRole('student');
     setCurrentTab('courses');
+    setAuthDebugMsg('');
   };
 
   const handleCreateReceipt = async (receipt: PaymentReceipt) => {
@@ -181,10 +183,9 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100 selection:bg-cyan-500 selection:text-white font-sans antialiased">
-      
       {authDebugMsg && (
-        <div className="bg-gradient-to-r from-cyan-950 to-blue-950 border-b border-cyan-500/40 text-cyan-200 px-4 py-2 text-xs text-center font-mono font-bold flex items-center justify-center justify-between">
-          <span>🔍 Diagnóstico de Autenticación: {authDebugMsg}</span>
+        <div className="bg-gradient-to-r from-cyan-950 to-blue-950 border-b border-cyan-500/40 text-cyan-200 px-4 py-2 text-xs text-center font-mono font-bold flex items-center justify-between">
+          <span>🔍 Estado de Autenticación: {authDebugMsg}</span>
           <button onClick={() => setAuthDebugMsg('')} className="text-slate-400 hover:text-white ml-4">✕</button>
         </div>
       )}
