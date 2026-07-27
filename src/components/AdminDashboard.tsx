@@ -233,7 +233,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       {activeTab === 'courses' && (
         <div className="glass-panel rounded-3xl p-6 border border-slate-800 space-y-6">
           <div className="flex items-center justify-between">
-            <h3 className="font-bold text-white text-lg">Gestión de Cursos, Precios (USD) & Horas Lectivas</h3>
+            <h3 className="font-bold text-white text-lg">Gestión de Cursos & Precios (USD)</h3>
             <button
               onClick={() =>
                 setEditingCourse({
@@ -260,7 +260,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <tr>
                   <th className="p-3">Título del Curso</th>
                   <th className="p-3">Precio Certificado (USD)</th>
-                  <th className="p-3">Horas Lectivas</th>
+                  
                   <th className="p-3">Docente / Instructor</th>
                   <th className="p-3 text-right">Acción</th>
                 </tr>
@@ -270,15 +270,30 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <tr key={c.id} className="hover:bg-slate-900/40 transition-colors">
                     <td className="p-3 font-bold text-white">{c.title}</td>
                     <td className="p-3 font-bold text-emerald-400">US ${c.price_usd.toFixed(2)}</td>
-                    <td className="p-3 font-mono">{c.academic_hours} hrs</td>
+                    
                     <td className="p-3">{c.instructor_name}</td>
                     <td className="p-3 text-right">
-                      <button
-                        onClick={() => setEditingCourse(c)}
-                        className="px-3 py-1.5 bg-cyan-950 hover:bg-cyan-900 border border-cyan-500/40 text-cyan-300 font-bold rounded-xl transition-all inline-flex items-center gap-1"
-                      >
-                        <Edit className="w-3.5 h-3.5" /> Editar Datos / Precio / Horas
-                      </button>
+                      <div className="flex items-center justify-end gap-2">
+                        <button
+                          onClick={() => setEditingCourse(c)}
+                          className="px-3 py-1.5 bg-cyan-950 hover:bg-cyan-900 border border-cyan-500/40 text-cyan-300 font-bold rounded-xl transition-all inline-flex items-center gap-1"
+                        >
+                          <Edit className="w-3.5 h-3.5" /> Editar
+                        </button>
+                        <button
+                          onClick={() => {
+                            if (confirm(`¿Estás seguro de eliminar el curso "${c.title}"? Esta acción no se puede deshacer.`)) {
+                              const updated = courses.filter((item) => item.id !== c.id);
+                              onUpdateCourses(updated);
+                              if (onDeleteCourse) onDeleteCourse(c.id);
+                            }
+                          }}
+                          className="px-3 py-1.5 bg-red-950/80 hover:bg-red-900 border border-red-800/80 text-red-300 font-bold rounded-xl transition-all inline-flex items-center gap-1"
+                          title="Eliminar Curso"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" /> Eliminar
+                        </button>
+                      </div>
                     </td>
                   </tr>
                 ))}
@@ -299,7 +314,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <tr>
                   <th className="p-3">Graduado</th>
                   <th className="p-3">Curso</th>
-                  <th className="p-3">Horas Lectivas</th>
+                  
                   <th className="p-3">Fecha</th>
                   <th className="p-3">Sello SHA-256</th>
                   <th className="p-3 text-right">Acciones</th>
@@ -310,7 +325,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   <tr key={cert.id} className="hover:bg-slate-900/40 transition-colors">
                     <td className="p-3 font-bold text-white">{cert.student_name}</td>
                     <td className="p-3">{cert.course_title}</td>
-                    <td className="p-3 font-mono">{cert.academic_hours} hrs</td>
+                    
                     <td className="p-3">{cert.issued_at}</td>
                     <td className="p-3 font-mono text-[10px] text-cyan-400 truncate max-w-[120px]">{cert.hash_sha256}</td>
                     <td className="p-3 text-right space-x-2">
@@ -519,7 +534,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <X className="w-5 h-5" />
             </button>
 
-            <h3 className="font-bold text-lg text-white border-b border-slate-800 pb-3">Editar Curso, Precio & Horas Lectivas</h3>
+            <h3 className="font-bold text-lg text-white border-b border-slate-800 pb-3">Editar Curso & Precio (USD)</h3>
 
             <form onSubmit={handleSaveCourse} className="space-y-4 text-xs">
               <div>
@@ -546,16 +561,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                   />
                 </div>
 
-                <div>
-                  <label className="text-slate-300 font-semibold block mb-1">Horas Lectivas Libres:</label>
-                  <input
-                    type="number"
-                    value={editingCourse.academic_hours}
-                    onChange={(e) => setEditingCourse({ ...editingCourse, academic_hours: parseInt(e.target.value) || 0 })}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-cyan-400 font-bold"
-                    required
-                  />
-                </div>
+                
               </div>
 
               <div>
@@ -627,16 +633,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               </div>
 
               <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-slate-300 font-semibold block mb-1">Horas Lectivas Libres:</label>
-                  <input
-                    type="number"
-                    value={editingCertificate.academic_hours}
-                    onChange={(e) => setEditingCertificate({ ...editingCertificate, academic_hours: parseInt(e.target.value) || 0 })}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-cyan-400 font-bold"
-                    required
-                  />
-                </div>
+                
 
                 <div>
                   <label className="text-slate-300 font-semibold block mb-1">Fecha de Emisión:</label>

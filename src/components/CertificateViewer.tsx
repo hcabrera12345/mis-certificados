@@ -65,10 +65,7 @@ export const CertificateViewer: React.FC<CertificateViewerProps> = ({
                     <User className="w-4 h-4 text-cyan-400" />
                     <span>Otorgado a: <strong className="text-slate-200">{cert.student_name}</strong></span>
                   </div>
-                  <div className="flex items-center gap-2">
-                    <Clock className="w-4 h-4 text-amber-400" />
-                    <span>Carga Académica: <strong className="text-slate-200">{cert.academic_hours} horas lectivas</strong></span>
-                  </div>
+                  
                 </div>
 
                 <div className="p-3 bg-slate-950/80 border border-slate-800/80 rounded-2xl mb-6 text-[11px] font-mono text-slate-400">
