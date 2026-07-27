@@ -43,7 +43,7 @@ export default function Home() {
     // 2. Procesador unificado de perfil
     const applyUserProfile = (email: string, fullName?: string, userRoleInput?: string) => {
       const isUserAdmin = email.toLowerCase() === 'admin@quinto.app' || userRoleInput === 'admin';
-      const name = fullName || email.split('@')[0] || 'Estudiante Quinto';
+      const name = fullName || email.split('@')[0] || 'Usuario Quinto';
       const role: UserRole = isUserAdmin ? 'admin' : 'student';
 
       setUserProfile({ email, name, role });

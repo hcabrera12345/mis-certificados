@@ -1,26 +1,25 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Lock, Mail, User, ShieldCheck, ArrowRight, ShieldAlert } from 'lucide-react';
-import { supabase } from '@/lib/supabaseClient';
+import { X, User, Mail, Lock, LogIn, UserPlus, Shield, CheckCircle2, AlertCircle } from 'lucide-react';
 import { UserRole } from '@/types';
+import { supabase } from '@/lib/supabaseClient';
 
 interface AuthModalProps {
   onClose: () => void;
-  onSuccess: (userProfile: { email: string; name: string; role: UserRole }) => void;
+  onSuccess: (profile: { email: string; name: string; role: UserRole }) => void;
 }
 
 export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
-  const [isRegister, setIsRegister] = useState(true);
-  const [isAdminMode, setIsAdminMode] = useState(false);
+  // mode: 'signup' (Crear Cuenta) | 'signin' (Iniciar Sesión) | 'admin' (Acceso Director)
+  const [authTab, setAuthTab] = useState<'signup' | 'signin' | 'admin'>('signup');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
 
-  // Estándar de Autenticación Google OAuth 2.0 / PKCE Protocol
-    const handleGoogleSignIn = async () => {
+  const handleGoogleSignIn = async () => {
     setLoading(true);
     setErrorMsg('');
     try {
@@ -28,7 +27,11 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: currentOrigin
+          redirectTo: currentOrigin,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent'
+          }
         }
       });
       if (error) setErrorMsg(error.message);
@@ -45,34 +48,63 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
     setErrorMsg('');
 
     try {
-      if (isAdminMode) {
-        // ACCESO PRIVADO DE ADMINISTRACIÓN (Exclusivo Hernán)
+      // 1. Acceso Exclusivo de Administración (Director Quinto)
+      if (authTab === 'admin') {
+        if (email.trim().toLowerCase() === 'admin@quinto.app' && password === 'admin123') {
+          onSuccess({
+            email: 'admin@quinto.app',
+            name: 'Director Quinto',
+            role: 'admin'
+          });
+          onClose();
+          return;
+        } else {
+          const { data, error } = await supabase.auth.signInWithPassword({
+            email,
+            password
+          });
+          if (error) throw error;
+          if (data.user) {
+            onSuccess({
+              email: data.user.email || email,
+              name: data.user.user_metadata?.full_name || 'Administrador',
+              role: 'admin'
+            });
+            onClose();
+            return;
+          }
+        }
+      }
+
+      // 2. Modo Iniciar Sesión (Sign In)
+      if (authTab === 'signin') {
         const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password
         });
 
-        if (error) {
-          if (email.toLowerCase() === 'admin@quinto.app' && password === 'admin123') {
-            onSuccess({
-              email: 'admin@quinto.app',
-              name: 'Hernán (Director Quinto)',
-              role: 'admin'
-            });
-            return;
-          }
-          setErrorMsg('Acceso denegado. Credenciales de Administrador no válidas.');
+        if (error) throw error;
+
+        if (data.user) {
+          const isUserAdmin = email.toLowerCase() === 'admin@quinto.app';
+          onSuccess({
+            email: data.user.email || email,
+            name: data.user.user_metadata?.full_name || email.split('@')[0],
+            role: isUserAdmin ? 'admin' : 'student'
+          });
+          onClose();
+          return;
+        }
+      }
+
+      // 3. Modo Crear Cuenta (Sign Up)
+      if (authTab === 'signup') {
+        if (!fullName.trim()) {
+          setErrorMsg('Por favor ingresa tu nombre y apellido completo.');
           setLoading(false);
           return;
         }
 
-        onSuccess({
-          email: data.user?.email || email,
-          name: data.user?.user_metadata?.full_name || 'Hernán (Director Quinto)',
-          role: 'admin'
-        });
-      } else if (isRegister) {
-        // REGISTRO EXCLUSIVO DE ALUMNOS (ESTUDIANTES)
         const { data, error } = await supabase.auth.signUp({
           email,
           password,
@@ -85,228 +117,275 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
         });
 
         if (error) {
-          setErrorMsg(error.message);
-          setLoading(false);
-          return;
+          if (
+            error.message.toLowerCase().includes('already registered') ||
+            error.message.toLowerCase().includes('already in use') ||
+            error.code === 'user_already_exists'
+          ) {
+            setErrorMsg('⚠️ Este correo electrónico ya se encuentra registrado en el sistema. Por favor conmuta a la pestaña "Iniciar Sesión" o utiliza "Google (1-Clic)".');
+            setLoading(false);
+            return;
+          }
+          throw error;
         }
 
-        onSuccess({
-          email,
-          name: fullName || email.split('@')[0],
-          role: 'student'
-        });
-      } else {
-        // LOGIN ESTUDIANTE
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password
-        });
-
-        if (error) {
-          setErrorMsg('Correo o contraseña incorrectos.');
-          setLoading(false);
-          return;
+        if (data.user) {
+          if (data.session) {
+            onSuccess({
+              email: data.user.email || email,
+              name: fullName,
+              role: 'student'
+            });
+            onClose();
+          } else {
+            alert(`¡Registro completado! Se ha enviado un correo de confirmación a ${email}. Por favor revisa tu bandeja para activar tu cuenta.`);
+            onClose();
+          }
         }
-
-        const role = (data.user?.user_metadata?.role as UserRole) || 'student';
-        onSuccess({
-          email: data.user?.email || email,
-          name: data.user?.user_metadata?.full_name || email.split('@')[0],
-          role: role
-        });
       }
     } catch (err: any) {
-      setErrorMsg(err.message || 'Error de autenticación');
+      console.error('Auth error:', err);
+      setErrorMsg(err.message || 'Ocurrió un error en la autenticación.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
-      <div className="glass-panel w-full max-w-md rounded-3xl p-6 relative border border-cyan-500/30 shadow-2xl space-y-5">
-        <button
-          onClick={onClose}
-          className="absolute top-4 right-4 text-slate-400 hover:text-white p-2 rounded-full hover:bg-slate-800"
-        >
-          <X className="w-5 h-5" />
-        </button>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md animate-fade-in">
+      <div className="relative w-full max-w-md bg-slate-900/95 border border-slate-800 rounded-3xl shadow-2xl shadow-cyan-950/50 overflow-hidden font-sans">
+        {/* Glow Effects */}
+        <div className="absolute -top-20 -left-20 w-40 h-40 bg-cyan-500/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute -bottom-20 -right-20 w-40 h-40 bg-blue-600/15 rounded-full blur-3xl pointer-events-none" />
 
-        <div className="text-center space-y-2">
-          <div className={`w-12 h-12 rounded-2xl border flex items-center justify-center mx-auto ${
-            isAdminMode
-              ? 'bg-amber-500/20 text-amber-400 border-amber-500/30'
-              : 'bg-cyan-500/20 text-cyan-400 border-cyan-500/30'
-          }`}>
-            {isAdminMode ? <ShieldAlert className="w-6 h-6" /> : <Lock className="w-6 h-6" />}
-          </div>
-          <h3 className="font-extrabold text-xl text-white">
-            {isAdminMode
-              ? 'Acceso Privado de Administración'
-              : isRegister
-              ? 'Nuevo Registro de Estudiante'
-              : 'Iniciar Sesión (Estudiantes)'}
-          </h3>
-          <p className="text-xs text-slate-400">
-            {isAdminMode
-              ? 'Consola exclusiva para la dirección general del sistema Quinto.'
-              : isRegister
-              ? 'Regístrate con 1-clic con Google o crea tu cuenta para tus certificados.'
-              : 'Ingresa a tu portal personal para descargar tus certificados verificados.'}
-          </p>
-        </div>
-
-        {errorMsg && (
-          <div className="bg-red-950/60 border border-red-500/40 text-red-300 p-3 rounded-xl text-xs text-center font-medium leading-relaxed">
-            {errorMsg}
-          </div>
-        )}
-
-        {!isAdminMode && (
-          <div className="space-y-3">
-            <button
-              type="button"
-              onClick={handleGoogleSignIn}
-              disabled={loading}
-              className="w-full py-3 bg-white hover:bg-slate-100 text-slate-900 font-extrabold rounded-xl text-xs transition-all flex items-center justify-center gap-2.5 shadow-lg shadow-white/10"
-            >
-              <svg className="w-4 h-4" viewBox="0 0 24 24">
-                <path
-                  fill="#4285F4"
-                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-                />
-                <path
-                  fill="#34A853"
-                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-                />
-                <path
-                  fill="#FBBC05"
-                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.06H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.94l2.85-2.22.81-.63z"
-                />
-                <path
-                  fill="#EA4335"
-                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.06l3.66 2.84c.87-2.6 3.3-4.52 6.16-4.52z"
-                />
-              </svg>
-              {isRegister ? 'Registrarme con Google (1-Clic)' : 'Iniciar Sesión con Google (1-Clic)'}
-            </button>
-
-            <div className="relative flex py-1 items-center">
-              <div className="flex-grow border-t border-slate-800"></div>
-              <span className="flex-shrink mx-3 text-[11px] text-slate-500 font-medium">
-                {isRegister ? 'O regístrate con tu correo' : 'O usa tu correo'}
-              </span>
-              <div className="flex-grow border-t border-slate-800"></div>
+        {/* Modal Header */}
+        <div className="relative px-6 pt-6 pb-4 border-b border-slate-800/80 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-cyan-500 to-blue-600 p-0.5 shadow-md shadow-cyan-500/20">
+              <div className="w-full h-full bg-slate-950 rounded-[14px] flex items-center justify-center">
+                {authTab === 'admin' ? (
+                  <Shield className="w-5 h-5 text-amber-400" />
+                ) : (
+                  <User className="w-5 h-5 text-cyan-400" />
+                )}
+              </div>
+            </div>
+            <div>
+              <h2 className="text-lg font-bold text-white tracking-tight">
+                {authTab === 'admin' ? 'Acceso de Dirección' : 'Plataforma Quinto'}
+              </h2>
+              <p className="text-xs text-slate-400">
+                {authTab === 'admin' ? 'Consola Privada de Administración' : 'Emisión & Autenticidad Digital'}
+              </p>
             </div>
           </div>
+          <button
+            onClick={onClose}
+            className="p-2 text-slate-400 hover:text-white bg-slate-800/50 hover:bg-slate-800 rounded-xl transition-all"
+          >
+            <X className="w-5 h-5" />
+          </button>
+        </div>
+
+        {/* Tab Navigation: Sign Up vs Sign In */}
+        {authTab !== 'admin' && (
+          <div className="p-2 bg-slate-950/60 border-b border-slate-800/60 flex items-center gap-2 px-6 pt-4 pb-2">
+            <button
+              type="button"
+              onClick={() => {
+                setAuthTab('signup');
+                setErrorMsg('');
+              }}
+              className={`flex-1 py-2.5 px-3 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 ${
+                authTab === 'signup'
+                  ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/20'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/40'
+              }`}
+            >
+              <UserPlus className="w-4 h-4" />
+              Crear Cuenta (Sign Up)
+            </button>
+
+            <button
+              type="button"
+              onClick={() => {
+                setAuthTab('signin');
+                setErrorMsg('');
+              }}
+              className={`flex-1 py-2.5 px-3 rounded-xl font-bold text-xs transition-all flex items-center justify-center gap-2 ${
+                authTab === 'signin'
+                  ? 'bg-gradient-to-r from-cyan-500 to-blue-600 text-white shadow-md shadow-cyan-500/20'
+                  : 'text-slate-400 hover:text-slate-200 hover:bg-slate-900/40'
+              }`}
+            >
+              <LogIn className="w-4 h-4" />
+              Iniciar Sesión (Sign In)
+            </button>
+          </div>
         )}
 
-        <form onSubmit={handleSubmit} className="space-y-4 text-xs">
-          {isRegister && !isAdminMode && (
+        {/* Modal Body */}
+        <div className="p-6 space-y-5">
+          {/* Error / Notification Alert */}
+          {errorMsg && (
+            <div className="p-3 bg-red-950/50 border border-red-500/30 rounded-xl text-red-200 text-xs flex items-start gap-2.5 animate-shake">
+              <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+              <span>{errorMsg}</span>
+            </div>
+          )}
+
+          {/* Google 1-Click Button */}
+          {authTab !== 'admin' && (
             <div>
-              <label className="text-slate-300 font-semibold block mb-1">Nombre y Apellidos del Alumno:</label>
-              <div className="relative">
-                <User className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
-                <input
-                  type="text"
-                  value={fullName}
-                  onChange={(e) => setFullName(e.target.value)}
-                  placeholder="Ej: Hernán Cabrera"
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl py-2.5 pl-9 pr-3 text-white focus:outline-none focus:border-cyan-500"
-                  required
-                />
+              <button
+                type="button"
+                onClick={handleGoogleSignIn}
+                disabled={loading}
+                className="w-full py-3 px-4 bg-slate-800/90 hover:bg-slate-800 text-white font-semibold rounded-2xl text-xs border border-slate-700/80 shadow-md transition-all flex items-center justify-center gap-3 group"
+              >
+                <svg className="w-4 h-4 transition-transform group-hover:scale-110" viewBox="0 0 24 24">
+                  <path
+                    fill="#EA4335"
+                    d="M12 5c1.6 0 3 .6 4.1 1.6l3.1-3.1C17.3 1.8 14.8 1 12 1 7.5 1 3.7 3.6 1.9 7.3l3.7 2.9C6.5 7.3 9 5 12 5z"
+                  />
+                  <path
+                    fill="#4285F4"
+                    d="M23.5 12.3c0-.8-.1-1.6-.2-2.3H12v4.5h6.5c-.3 1.5-1.1 2.8-2.4 3.7l3.7 2.9c2.2-2 3.7-5 3.7-8.8z"
+                  />
+                  <path
+                    fill="#FBBC05"
+                    d="M5.6 14.8c-.2-.7-.4-1.5-.4-2.3s.2-1.6.4-2.3L1.9 7.3C.7 9.7 0 12.3 0 15s.7 5.3 1.9 7.7l3.7-2.9c-.3-.7-.5-1.5-.5-2.3z"
+                  />
+                  <path
+                    fill="#34A853"
+                    d="M12 23c3.2 0 6-1.1 8-3l-3.7-2.9c-1.1.7-2.5 1.2-4.3 1.2-3 0-5.5-2.3-6.4-5.2L1.9 16C3.7 19.7 7.5 22.3 12 23z"
+                  />
+                </svg>
+                <span>Continuar con Google (1-Clic)</span>
+              </button>
+
+              <div className="relative my-4 flex items-center justify-center">
+                <div className="border-t border-slate-800 w-full" />
+                <span className="bg-slate-900 px-3 text-[11px] text-slate-500 font-mono uppercase tracking-wider">
+                  o con tu correo
+                </span>
               </div>
             </div>
           )}
 
-          <div>
-            <label className="text-slate-300 font-semibold block mb-1">
-              {isAdminMode ? 'Correo de Administrador:' : 'Correo Electrónico:'}
-            </label>
-            <div className="relative">
-              <Mail className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
-              <input
-                type="email"
-                value={email}
-                onChange={(e) => setEmail(e.target.value)}
-                placeholder={isAdminMode ? 'admin@quinto.app' : 'tu-correo@gmail.com'}
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl py-2.5 pl-9 pr-3 text-white focus:outline-none focus:border-cyan-500"
-                required
-              />
+          {/* Form */}
+          <form onSubmit={handleSubmit} className="space-y-4">
+            {authTab === 'signup' && (
+              <div>
+                <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                  Nombre y Apellido
+                </label>
+                <div className="relative">
+                  <User className="absolute left-3.5 top-3 w-4 h-4 text-slate-500" />
+                  <input
+                    type="text"
+                    required
+                    value={fullName}
+                    onChange={(e) => setFullName(e.target.value)}
+                    placeholder="Ej: Hernán Cabrera Pantoja"
+                    className="w-full pl-10 pr-4 py-2.5 bg-slate-950/80 border border-slate-800 focus:border-cyan-500 rounded-xl text-xs text-white placeholder-slate-500 outline-none transition-all"
+                  />
+                </div>
+              </div>
+            )}
+
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                Correo Electrónico
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-3.5 top-3 w-4 h-4 text-slate-500" />
+                <input
+                  type="email"
+                  required
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  placeholder="usuario@quinto.app"
+                  className="w-full pl-10 pr-4 py-2.5 bg-slate-950/80 border border-slate-800 focus:border-cyan-500 rounded-xl text-xs text-white placeholder-slate-500 outline-none transition-all"
+                />
+              </div>
             </div>
-          </div>
 
-          <div>
-            <label className="text-slate-300 font-semibold block mb-1">Contraseña:</label>
-            <div className="relative">
-              <Lock className="w-4 h-4 absolute left-3 top-3 text-slate-500" />
-              <input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="••••••••"
-                className="w-full bg-slate-900 border border-slate-700 rounded-xl py-2.5 pl-9 pr-3 text-white focus:outline-none focus:border-cyan-500"
-                required
-              />
+            <div>
+              <label className="block text-xs font-semibold text-slate-300 mb-1.5">
+                Contraseña
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-3.5 top-3 w-4 h-4 text-slate-500" />
+                <input
+                  type="password"
+                  required
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  placeholder="••••••••"
+                  className="w-full pl-10 pr-4 py-2.5 bg-slate-950/80 border border-slate-800 focus:border-cyan-500 rounded-xl text-xs text-white placeholder-slate-500 outline-none transition-all"
+                />
+              </div>
             </div>
-          </div>
 
-          <button
-            type="submit"
-            disabled={loading}
-            className={`w-full py-3 text-white font-extrabold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 ${
-              isAdminMode
-                ? 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 shadow-amber-500/20'
-                : 'bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 shadow-cyan-500/20'
-            }`}
-          >
-            {loading
-              ? 'Verificando con Supabase...'
-              : isAdminMode
-              ? 'Ingresar a Consola de Dirección'
-              : isRegister
-              ? 'Crear Cuenta de Estudiante'
-              : 'Ingresar como Estudiante'}
-            <ArrowRight className="w-4 h-4" />
-          </button>
-        </form>
-
-        <div className="flex items-center justify-between pt-3 border-t border-slate-800 text-xs font-semibold">
-          {!isAdminMode ? (
-            <>
-              <button
-                onClick={() => {
-                  setIsRegister(!isRegister);
-                  setErrorMsg('');
-                }}
-                className="text-cyan-400 hover:underline"
-              >
-                {isRegister ? '¿Ya tienes cuenta? Inicia Sesión' : '¿Nuevo alumno? Regístrate aquí'}
-              </button>
-
-              <button
-                onClick={() => {
-                  setIsAdminMode(true);
-                  setIsRegister(false);
-                  setErrorMsg('');
-                }}
-                className="text-slate-400 hover:text-amber-400 flex items-center gap-1"
-              >
-                <ShieldCheck className="w-3.5 h-3.5" />
-                Acceso Admin
-              </button>
-            </>
-          ) : (
             <button
-              onClick={() => {
-                setIsAdminMode(false);
-                setErrorMsg('');
-              }}
-              className="text-cyan-400 hover:underline mx-auto"
+              type="submit"
+              disabled={loading}
+              className={`w-full py-3 px-4 font-bold text-xs rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 ${
+                authTab === 'admin'
+                  ? 'bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-white shadow-amber-500/20'
+                  : 'bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white shadow-cyan-500/20'
+              }`}
             >
-              ← Volver al Portal de Estudiantes
+              {loading ? (
+                <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : authTab === 'signup' ? (
+                <>
+                  <UserPlus className="w-4 h-4" />
+                  Crear Cuenta de Usuario
+                </>
+              ) : authTab === 'signin' ? (
+                <>
+                  <LogIn className="w-4 h-4" />
+                  Iniciar Sesión
+                </>
+              ) : (
+                <>
+                  <Shield className="w-4 h-4" />
+                  Ingresar a Consola de Dirección
+                </>
+              )}
             </button>
-          )}
+          </form>
+
+          {/* Switch to Admin mode */}
+          <div className="pt-2 text-center">
+            {authTab === 'admin' ? (
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthTab('signup');
+                  setErrorMsg('');
+                }}
+                className="text-[11px] text-slate-400 hover:text-cyan-400 font-semibold underline underline-offset-4 transition-all"
+              >
+                ← Volver al Registro de Usuarios
+              </button>
+            ) : (
+              <button
+                type="button"
+                onClick={() => {
+                  setAuthTab('admin');
+                  setEmail('admin@quinto.app');
+                  setPassword('');
+                  setErrorMsg('');
+                }}
+                className="text-[11px] text-slate-500 hover:text-amber-400 font-medium transition-all"
+              >
+                Acceso Privado de Dirección General (Admin)
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>

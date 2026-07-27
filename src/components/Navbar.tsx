@@ -104,7 +104,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 <span className={`text-[10px] px-2 py-0.5 rounded-full font-bold uppercase ${
                   userProfile.role === 'admin' ? 'bg-amber-500/20 text-amber-300 border border-amber-500/30' : 'bg-cyan-500/20 text-cyan-300 border border-cyan-500/30'
                 }`}>
-                  {userProfile.role === 'admin' ? 'Administrador' : 'Estudiante'}
+                  {userProfile.role === 'admin' ? 'Administrador' : 'Usuario'}
                 </span>
               </div>
               <button
