@@ -27,6 +27,7 @@ export default function Home() {
   const [verifyHash, setVerifyHash] = useState<string>('');
 
   useEffect(() => {
+    // 1. Carga de Datos desde la Base de Datos
     async function initData() {
       const dbCourses = await getCoursesFromDB();
       const dbReceipts = await getReceiptsFromDB();
@@ -38,25 +39,38 @@ export default function Home() {
     }
     initData();
 
-    const updateSessionState = (session: any) => {
+    // 2. Función helper para procesar la sesión activa de Supabase
+    const processSession = (session: any) => {
       if (session?.user) {
         const email = session.user.email || '';
-        const role = (session.user.user_metadata?.role as UserRole) || (email.toLowerCase().includes('admin') ? 'admin' : 'student');
+        const isUserAdmin = email.toLowerCase() === 'admin@quinto.app' || session.user.user_metadata?.role === 'admin';
         const name = session.user.user_metadata?.full_name || session.user.user_metadata?.name || email.split('@')[0] || 'Estudiante Quinto';
+        const role: UserRole = isUserAdmin ? 'admin' : 'student';
+
         setUserProfile({ email, name, role });
         setUserRole(role);
-      } else {
-        setUserProfile(null);
-        setUserRole('student');
+
+        // Si se retorna con el hash de OAuth en la URL, limpiar la URL manteniendo la página limpia
+        if (typeof window !== 'undefined' && window.location.hash.includes('access_token')) {
+          window.history.replaceState(null, '', window.location.pathname);
+        }
       }
     };
 
+    // 3. Verificación inicial de la sesión
     supabase.auth.getSession().then(({ data: { session } }) => {
-      updateSessionState(session);
+      processSession(session);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
-      updateSessionState(session);
+    // 4. Listener reactivo en tiempo real para eventos SIGNED_IN (Google 1-Clic o Formulario)
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Supabase Auth Event:', event);
+      if (session) {
+        processSession(session);
+      } else if (event === 'SIGNED_OUT') {
+        setUserProfile(null);
+        setUserRole('student');
+      }
     });
 
     return () => {

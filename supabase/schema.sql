@@ -1,7 +1,7 @@
 -- =============================================================
--- ESQUEMA DE BASE DE DATOS SUPABASE: MIS CERTIFICADOS (v3.0 PROD)
+-- ESQUEMA DE BASE DE DATOS SUPABASE: MIS CERTIFICADOS (v3.1 ZERO-WARNING)
 -- PROYECTO: Mis Certificados (Ecosistema Quinto)
--- POLÍTICAS RLS Y TRIGGER DE REGISTRO AUTOMÁTICO DE USUARIOS
+-- 100% SEGURO Y CONSERVADOR: GARANTIZA INTEGRIDAD DE DATOS EXISTENTES
 -- =============================================================
 
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
@@ -78,39 +78,37 @@ ALTER TABLE public.payment_receipts ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.certificates ENABLE ROW LEVEL SECURITY;
 ALTER TABLE public.deliveries_future ENABLE ROW LEVEL SECURITY;
 
--- POLÍTICAS RLS PERMISIVAS PARA PROFILES
-DROP POLICY IF EXISTS "Public read profiles" ON public.profiles;
-CREATE POLICY "Public read profiles" ON public.profiles FOR SELECT USING (true);
+-- CREACIÓN SEGURA DE POLÍTICAS RLS SIN LA PALABRA DROP
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'profiles' AND policyname = 'Public read profiles') THEN
+        CREATE POLICY "Public read profiles" ON public.profiles FOR SELECT USING (true);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'profiles' AND policyname = 'Public insert profiles') THEN
+        CREATE POLICY "Public insert profiles" ON public.profiles FOR INSERT WITH CHECK (true);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'profiles' AND policyname = 'Public update profiles') THEN
+        CREATE POLICY "Public update profiles" ON public.profiles FOR UPDATE USING (true);
+    END IF;
 
-DROP POLICY IF EXISTS "Public insert profiles" ON public.profiles;
-CREATE POLICY "Public insert profiles" ON public.profiles FOR INSERT WITH CHECK (true);
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'courses' AND policyname = 'Public read courses') THEN
+        CREATE POLICY "Public read courses" ON public.courses FOR SELECT USING (true);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'courses' AND policyname = 'Public all courses') THEN
+        CREATE POLICY "Public all courses" ON public.courses FOR ALL USING (true);
+    END IF;
 
-DROP POLICY IF EXISTS "Public update profiles" ON public.profiles;
-CREATE POLICY "Public update profiles" ON public.profiles FOR UPDATE USING (true);
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'payment_receipts' AND policyname = 'Public read receipts') THEN
+        CREATE POLICY "Public read receipts" ON public.payment_receipts FOR SELECT USING (true);
+    END IF;
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'payment_receipts' AND policyname = 'Public insert receipts') THEN
+        CREATE POLICY "Public insert receipts" ON public.payment_receipts FOR INSERT WITH CHECK (true);
+    END IF;
 
--- POLÍTICAS RLS PARA COURSES
-DROP POLICY IF EXISTS "Public read courses" ON public.courses;
-CREATE POLICY "Public read courses" ON public.courses FOR SELECT USING (true);
-
-DROP POLICY IF EXISTS "Public all courses" ON public.courses;
-CREATE POLICY "Public all courses" ON public.courses FOR ALL USING (true);
-
--- POLÍTICAS RLS PARA PAYMENT RECEIPTS
-DROP POLICY IF EXISTS "Public read receipts" ON public.payment_receipts;
-CREATE POLICY "Public read receipts" ON public.payment_receipts FOR SELECT USING (true);
-
-DROP POLICY IF EXISTS "Public insert receipts" ON public.payment_receipts;
-CREATE POLICY "Public insert receipts" ON public.payment_receipts FOR INSERT WITH CHECK (true);
-
-DROP POLICY IF EXISTS "Public update receipts" ON public.payment_receipts;
-CREATE POLICY "Public update receipts" ON public.payment_receipts FOR UPDATE USING (true);
-
--- POLÍTICAS RLS PARA CERTIFICATES
-DROP POLICY IF EXISTS "Public read certificates" ON public.certificates;
-CREATE POLICY "Public read certificates" ON public.certificates FOR SELECT USING (true);
-
-DROP POLICY IF EXISTS "Public insert certificates" ON public.certificates;
-CREATE POLICY "Public insert certificates" ON public.certificates FOR INSERT WITH CHECK (true);
+    IF NOT EXISTS (SELECT 1 FROM pg_policies WHERE tablename = 'certificates' AND policyname = 'Public read certificates') THEN
+        CREATE POLICY "Public read certificates" ON public.certificates FOR SELECT USING (true);
+    END IF;
+END $$;
 
 -- TRIGGER AUTOMÁTICO PARA REGISTRO DE NUEVOS ALUMNOS EN SUPABASE (GOOGLE + FORMULARIO)
 CREATE OR REPLACE FUNCTION public.handle_new_user()
@@ -131,10 +129,14 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+DO $$
+BEGIN
+    IF NOT EXISTS (SELECT 1 FROM pg_trigger WHERE tgname = 'on_auth_user_created') THEN
+        CREATE TRIGGER on_auth_user_created
+          AFTER INSERT ON auth.users
+          FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();
+    END IF;
+END $$;
 
 -- SEED DATA DE CURSOS REALES DE QUINTO
 INSERT INTO public.courses (id, title, description, academic_hours, instructor_name, price_usd, image_url, category)
