@@ -20,26 +20,21 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
   const [errorMsg, setErrorMsg] = useState('');
 
   // Estándar de Autenticación Google OAuth 2.0 / PKCE Protocol
-  const handleGoogleSignIn = async () => {
+    const handleGoogleSignIn = async () => {
     setLoading(true);
     setErrorMsg('');
     try {
-      const currentOrigin = typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000';
-      const redirectUrl = currentOrigin;
-
+      const currentOrigin = typeof window !== 'undefined' ? window.location.origin : 'https://mis-certificados.quinto.app';
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: redirectUrl
+          redirectTo: currentOrigin
         }
       });
-
-      if (error) {
-        setErrorMsg(`Error de Google Provider en Supabase: ${error.message} (Código: ${error.status || '400'}). Revisa que el Client ID / Secret en Supabase coincidan con Google Cloud y que la App esté Publicada.`);
-        setLoading(false);
-      }
+      if (error) setErrorMsg(error.message);
     } catch (err: any) {
-      setErrorMsg(`Excepción en Google Auth: ${err.message || 'Error desconocido'}`);
+      setErrorMsg(err.message || 'Error al conectar con Google');
+    } finally {
       setLoading(false);
     }
   };
