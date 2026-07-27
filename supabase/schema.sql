@@ -126,6 +126,8 @@ BEGIN
   SET full_name = EXCLUDED.full_name,
       avatar_url = EXCLUDED.avatar_url;
   RETURN NEW;
+EXCEPTION WHEN OTHERS THEN
+  RETURN NEW;
 END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 

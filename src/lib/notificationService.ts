@@ -49,3 +49,15 @@ Directorio de Certificación Quinto Academy`;
     }
   ];
 }
+
+export interface SecurityAlert {
+  userEmail: string;
+  userName: string;
+  action: 'login' | 'register';
+  timestamp: string;
+}
+
+export function sendSecurityLoginNotification(alertInfo: SecurityAlert) {
+  console.log(`[ALERTA DE SEGURIDAD QUINTO ENVIADA A ${alertInfo.userEmail}]`);
+  console.log(`Mensaje: Hola ${alertInfo.userName}, se ha detectado un ${alertInfo.action === 'login' ? 'inicio de sesión' : 'nuevo registro'} en tu cuenta el ${alertInfo.timestamp}. Si no fuiste tú, por favor ponte en contacto de inmediato con el soporte de Quinto.`);
+}
