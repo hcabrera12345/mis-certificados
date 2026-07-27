@@ -15,6 +15,7 @@ import { supabase } from '@/lib/supabaseClient';
 
 export default function Home() {
   const [currentTab, setCurrentTab] = useState<string>('courses');
+  const [authDebugMsg, setAuthDebugMsg] = useState<string>('');
   const [userRole, setUserRole] = useState<UserRole>('student');
   const [userProfile, setUserProfile] = useState<{ email: string; name: string; role: UserRole } | null>(null);
   const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
@@ -65,13 +66,17 @@ export default function Home() {
         
         if (code) {
           try {
+            setAuthDebugMsg('Procesando código de autenticación de Google...');
             const { data, error } = await supabase.auth.exchangeCodeForSession(code);
-            if (!error && data.session) {
+            if (error) {
+              setAuthDebugMsg(`Error de Google Auth en Supabase: ${error.message}`);
+            } else if (data.session) {
+              setAuthDebugMsg(`¡Autenticación exitosa! Bienvenido ${data.session.user.email}`);
               processSession(data.session);
               return;
             }
-          } catch (e) {
-            console.error('Error intercambiando código OAuth PKCE:', e);
+          } catch (e: any) {
+            setAuthDebugMsg(`Excepción en Auth Callback: ${e.message}`);
           }
         }
       }
@@ -176,6 +181,14 @@ export default function Home() {
 
   return (
     <main className="min-h-screen bg-slate-950 text-slate-100 selection:bg-cyan-500 selection:text-white font-sans antialiased">
+      
+      {authDebugMsg && (
+        <div className="bg-gradient-to-r from-cyan-950 to-blue-950 border-b border-cyan-500/40 text-cyan-200 px-4 py-2 text-xs text-center font-mono font-bold flex items-center justify-center justify-between">
+          <span>🔍 Diagnóstico de Autenticación: {authDebugMsg}</span>
+          <button onClick={() => setAuthDebugMsg('')} className="text-slate-400 hover:text-white ml-4">✕</button>
+        </div>
+      )}
+
       <Navbar
         currentTab={currentTab}
         setCurrentTab={setCurrentTab}
