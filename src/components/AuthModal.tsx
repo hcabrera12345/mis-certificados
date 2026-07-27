@@ -50,9 +50,9 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
     try {
       // 1. Acceso Exclusivo de Administración (Director Quinto)
       if (authTab === 'admin') {
-        if (email.trim().toLowerCase() === 'admin@quinto.app' && password === 'admin123') {
+        if (email.trim().toLowerCase() === '' && password === 'QuintoEje2026') {
           onSuccess({
-            email: 'admin@quinto.app',
+            email: '',
             name: 'Director Quinto',
             role: 'admin'
           });
@@ -86,7 +86,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
         if (error) throw error;
 
         if (data.user) {
-          const isUserAdmin = email.toLowerCase() === 'admin@quinto.app';
+          const isUserAdmin = email.toLowerCase() === '';
           onSuccess({
             email: data.user.email || email,
             name: data.user.user_metadata?.full_name || email.split('@')[0],
@@ -376,7 +376,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
                 type="button"
                 onClick={() => {
                   setAuthTab('admin');
-                  setEmail('admin@quinto.app');
+                  setEmail('');
                   setPassword('');
                   setErrorMsg('');
                 }}

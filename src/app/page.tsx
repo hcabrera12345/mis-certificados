@@ -25,6 +25,22 @@ export default function Home() {
   const [certificates, setCertificates] = useState<Certificate[]>(INITIAL_CERTIFICATES);
   const [deliveries, setDeliveries] = useState<any[]>([]);
   const [systemSettings, setSystemSettings] = useState<SystemSettings>(DEFAULT_SETTINGS);
+
+  // Load persisted Payment QR URL from localStorage on startup
+  useEffect(() => {
+    const savedQr = localStorage.getItem('quinto_payment_qr_url');
+    if (savedQr) {
+      setSystemSettings((prev) => ({ ...prev, payment_qr_url: savedQr }));
+    }
+  }, []);
+
+  const handleUpdateSettingsWithPersistence = (newSettings: SystemSettings) => {
+    setSystemSettings(newSettings);
+    if (newSettings.payment_qr_url) {
+      localStorage.setItem('quinto_payment_qr_url', newSettings.payment_qr_url);
+    }
+  };
+
   const [verifyHash, setVerifyHash] = useState<string>('');
 
   useEffect(() => {
@@ -261,7 +277,7 @@ export default function Home() {
             onRejectReceipt={handleRejectReceipt}
             onUpdateCertificate={handleUpdateCertificate}
             onDeleteCertificate={handleDeleteCertificate}
-            onUpdateSettings={setSystemSettings}
+            onUpdateSettings={handleUpdateSettingsWithPersistence}
           />
         )}
 
