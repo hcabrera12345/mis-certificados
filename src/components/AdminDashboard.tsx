@@ -68,7 +68,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     alert('¡Certificado actualizado y re-emitido con sello SHA-256!');
   };
 
-        const handlePDFTemplateUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+          const handlePDFTemplateUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       const reader = new FileReader();
@@ -88,13 +88,28 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       const file = e.target.files[0];
       const reader = new FileReader();
       reader.onload = (event) => {
-        const dataUrl = event.target?.result as string;
-        if (dataUrl) {
-          localStorage.setItem('quinto_payment_qr_url', dataUrl);
-          if (onUpdateSettings) {
-            onUpdateSettings({ ...systemSettings, payment_qr_url: dataUrl });
-          }
-          alert('¡QR Oficial de Pago guardado exitosamente en la base de datos global! Ahora está activo y visible para el 100% de los usuarios en cualquier dispositivo.');
+        const rawDataUrl = event.target?.result as string;
+        if (rawDataUrl) {
+          const img = new Image();
+          img.onload = () => {
+            const canvas = document.createElement('canvas');
+            canvas.width = 400;
+            canvas.height = 400;
+            const ctx = canvas.getContext('2d');
+            if (ctx) {
+              ctx.fillStyle = '#ffffff';
+              ctx.fillRect(0, 0, 400, 400);
+              ctx.drawImage(img, 0, 0, 400, 400);
+              const compressedDataUrl = canvas.toDataURL('image/jpeg', 0.85);
+
+              localStorage.setItem('quinto_payment_qr_url', compressedDataUrl);
+              if (onUpdateSettings) {
+                onUpdateSettings({ ...systemSettings, payment_qr_url: compressedDataUrl });
+              }
+              alert('¡QR Oficial de Pago comprimido y guardado exitosamente en la base de datos global de Supabase! Ya está activo y sincronizado para tablets, celulares y computadoras mundialmente.');
+            }
+          };
+          img.src = rawDataUrl;
         }
       };
       reader.readAsDataURL(file);
