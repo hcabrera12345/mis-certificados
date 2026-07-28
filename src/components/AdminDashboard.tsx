@@ -68,7 +68,22 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     alert('¡Certificado actualizado y re-emitido con sello SHA-256!');
   };
 
-    const handleTemplateUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+      const handlePDFTemplateUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const dataUrl = event.target?.result as string;
+        if (dataUrl) {
+          localStorage.setItem('quinto_cert_pdf_template_data', dataUrl);
+          alert('¡Plantilla PDF Oficial (.PDF) cargada exitosamente! Todos los certificados se generarán estampando sobre este documento PDF oficial.');
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleTemplateUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       const reader = new FileReader();
@@ -393,7 +408,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 <span className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-white font-bold rounded-xl text-xs cursor-pointer shadow-md inline-flex items-center gap-2">
                   <Upload className="w-4 h-4" /> Subir Nueva Imagen de QR
                 </span>
-                <input type="file" accept="image/*" onChange={handleQRUpload} className="hidden" />
+                <input type="file" accept=".pdf,application/pdf,image/*" onChange={handleQRUpload} className="hidden" />
               </label>
             </div>
           </div>
@@ -409,12 +424,12 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
             <label className="border-2 border-dashed border-slate-700 hover:border-cyan-500 bg-slate-900/50 hover:bg-slate-900 rounded-2xl p-8 flex flex-col items-center justify-center cursor-pointer transition-all space-y-2">
               <Upload className="w-8 h-8 text-cyan-400" />
-              <span className="text-xs font-bold text-slate-300">Subir Plantilla (PNG / SVG)</span>
+              <span className="text-xs font-bold text-slate-300">Subir Plantilla Oficial (.PDF o Imagen)</span>
               <span className="text-[10px] text-slate-500">Formato horizontal de alta resolución</span>
               <input
                 type="file"
-                accept="image/*"
-                onChange={handleTemplateUpload}
+                accept=".pdf,application/pdf,image/*"
+                onChange={handlePDFTemplateUpload}
                 className="hidden"
               />
             </label>
