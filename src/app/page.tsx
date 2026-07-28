@@ -116,7 +116,7 @@ export default function Home() {
       // B. Load Payment QR Code (LocalStorage + Supabase DB Global Sync)
       const savedQr = localStorage.getItem('quinto_payment_qr_url');
       if (savedQr) {
-        setSystemSettings((prev) => ({ ...prev, payment_qr_url: savedQr }));
+        setSystemSettings((prev) => ({ ...prev, payment_qr_url: savedQr || '/quinto_official_payment_qr.png' }));
       }
 
       try {

@@ -97,7 +97,7 @@ export const PaymentOCRModal: React.FC<PaymentOCRModalProps> = ({
               <img
                   src={paymentQrUrl || 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=QUINTO_EJE_PAGO_OFICIAL'}
                   onError={(e) => {
-                    e.currentTarget.src = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=QUINTO_EJE_PAGO_OFICIAL';
+                    e.currentTarget.src = '/quinto_official_payment_qr.png';
                   }}
                   alt="QR Oficial de Pago Quinto"
                   className="w-full h-auto rounded-xl border border-slate-700 bg-white p-2 shadow-inner object-contain max-h-[220px]"

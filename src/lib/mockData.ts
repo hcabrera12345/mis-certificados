@@ -40,6 +40,6 @@ export const INITIAL_RECEIPTS: PaymentReceipt[] = [];
 export const INITIAL_CERTIFICATES: Certificate[] = [];
 
 export const DEFAULT_SETTINGS: SystemSettings = {
-  payment_qr_url: 'https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=YAPE_PLIN_QUINTO_OFICIAL',
+  payment_qr_url: '/quinto_official_payment_qr.png',
   payment_instructions: 'Realiza el pago escaneando el QR oficial y sube la foto o PDF de tu comprobante.'
 };
