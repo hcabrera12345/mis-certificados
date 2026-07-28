@@ -2,7 +2,7 @@
 import { OFFICIAL_QUINTO_PAYMENT_QR_BASE64 } from '@/lib/mockData';
 
 import React, { useState } from 'react';
-import { X, Award, Users, DollarSign, ShieldCheck, CheckCircle2, XCircle, Send, Upload, Eye, Edit, Plus, Trash2, Save, FileSpreadsheet, QrCode, Image as ImageIcon, Truck, RefreshCw, Check, AlertTriangle, ShieldAlert } from 'lucide-react';
+import { X, Award, FileText, Users, DollarSign, ShieldCheck, CheckCircle2, XCircle, Send, Upload, Eye, Edit, Plus, Trash2, Save, FileSpreadsheet, QrCode, Image as ImageIcon, Truck, RefreshCw, Check, AlertTriangle, ShieldAlert } from 'lucide-react';
 import { PaymentReceipt, Certificate, Course, SystemSettings } from '@/types';
 import { exportReceiptsToCSV, exportCertificatesToCSV } from '@/lib/reportExporter';
 
@@ -407,29 +407,67 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
       {/* TAB 4: UPLOAD PAYMENT QR & TEMPLATES */}
                   {/* TAB 4: UPLOAD PAYMENT QR & TEMPLATES */}
+                        {/* TAB 4: UPLOAD PAYMENT QR & PDF CERTIFICATE TEMPLATES */}
+                        {/* TAB 4: UPLOAD PAYMENT QR & PDF CERTIFICATE TEMPLATES */}
             {activeTab === 'settings' && (
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in">
-                {/* Left Box: Official Payment QR Code (Banco Ganadero S.A. / Yape / Plin) */}
-                <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">
-                  <div>
-                    <h3 className="font-bold text-white text-base">Cargar QR Oficial de Pago (Yape / Plin / Banco)</h3>
-                    <p className="text-xs text-slate-400 mt-1">
-                      Sube la imagen de tu código QR real o pega su enlace URL directo. Este código es el que verán los alumnos cuando presionen "Pagar / Solicitar Certificado".
-                    </p>
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 animate-fade-in">
+                {/* Left Card: Official Payment QR Code */}
+                <div className="bg-slate-900/90 border-2 border-amber-500/40 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl">
+                  <div className="flex items-center gap-4 border-b border-slate-800 pb-4">
+                    <div className="w-12 h-12 rounded-2xl bg-amber-500/10 border border-amber-500/30 flex items-center justify-center text-amber-400">
+                      <QrCode className="w-6 h-6" />
+                    </div>
+                    <div>
+                      <h3 className="text-lg font-black text-white">Configurar QR Oficial de Pago</h3>
+                      <p className="text-xs text-slate-400 mt-0.5">
+                        Elige la opción que prefieras para desplegar el QR a todos los estudiantes.
+                      </p>
+                    </div>
                   </div>
 
-                  <div className="w-52 h-52 sm:w-60 sm:h-60 mx-auto bg-white p-3 rounded-2xl shadow-inner flex items-center justify-center overflow-hidden border-2 border-amber-500/40">
-                    <img
-                      src={systemSettings.payment_qr_url || OFFICIAL_QUINTO_PAYMENT_QR_BASE64}
-                      alt="QR Oficial de Pago Quinto"
-                      className="w-full h-full object-contain select-none"
-                    />
+                  {/* QR Image Live Preview */}
+                  <div className="space-y-2 text-center">
+                    <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Vista Previa del QR Activo:</span>
+                    <div className="w-52 h-52 sm:w-60 sm:h-60 mx-auto bg-white p-3 rounded-2xl shadow-xl flex items-center justify-center overflow-hidden border-2 border-amber-500/50">
+                      <img
+                        src={systemSettings.payment_qr_url || OFFICIAL_QUINTO_PAYMENT_QR_BASE64}
+                        alt="QR Oficial de Pago Quinto"
+                        className="w-full h-full object-contain select-none"
+                      />
+                    </div>
                   </div>
 
-                  {/* Option A: File Upload Button */}
-                  <div className="pt-2">
-                    <label className="w-full py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-extrabold rounded-xl text-xs flex items-center justify-center gap-2 cursor-pointer transition-all shadow-md">
-                      <span>Subir Nueva Imagen de QR</span>
+                  {/* Option 1: Direct Image URL Paste */}
+                  <div className="bg-slate-950/80 p-5 rounded-2xl border border-slate-800 space-y-3">
+                    <label className="block text-xs font-black text-amber-400 uppercase tracking-wider">
+                      Opción 1: Pegar Enlace / URL Pública de la Foto del QR:
+                    </label>
+                    <div className="flex flex-col sm:flex-row gap-2.5">
+                      <input
+                        type="url"
+                        value={qrUrlInput}
+                        onChange={(e) => setQrUrlInput(e.target.value)}
+                        placeholder="https://..."
+                        className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-amber-500 transition-all"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleSaveQRUrl()}
+                        className="px-5 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-black rounded-xl text-xs shadow-md transition-all cursor-pointer whitespace-nowrap"
+                      >
+                        Guardar URL
+                      </button>
+                    </div>
+                    <p className="text-[10px] text-slate-500">Pega un enlace público de la imagen del QR para distribución ultra-rápida sin peso.</p>
+                  </div>
+
+                  {/* Option 2: Local File Upload */}
+                  <div className="bg-slate-950/80 p-5 rounded-2xl border border-slate-800 space-y-3">
+                    <label className="block text-xs font-black text-slate-300 uppercase tracking-wider">
+                      Opción 2: Subir Foto de QR desde la Computadora (PNG/JPG):
+                    </label>
+                    <label className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-xl text-xs flex items-center justify-center gap-2 cursor-pointer border border-slate-700 transition-all shadow-sm">
+                      <span>Subir Nueva Imagen de QR Local</span>
                       <input
                         type="file"
                         accept="image/*"
@@ -438,319 +476,62 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       />
                     </label>
                   </div>
-
-                  {/* Option B: Direct URL Input Box */}
-                  <div className="space-y-2 pt-3 border-t border-slate-800">
-                    <label className="block text-xs font-bold text-cyan-400 uppercase tracking-wider">
-                      🔗 O Pegar Enlace / URL Directa de Imagen del QR:
-                    </label>
-                    <div className="flex gap-2">
-                      <input
-                        type="url"
-                        value={qrUrlInput}
-                        onChange={(e) => setQrUrlInput(e.target.value)}
-                        placeholder="https://..."
-                        className="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-cyan-500"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => handleSaveQRUrl()}
-                        className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-xl text-xs transition-all cursor-pointer"
-                      >
-                        Guardar URL
-                      </button>
-                    </div>
-                  </div>
                 </div>
 
-                {/* Right Box: Certificate Template Background */}
-                <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl flex flex-col justify-between">
-                  <div>
-                    <h3 className="font-bold text-white text-base">Cargar Fondo de Plantilla de Certificado</h3>
-                    <p className="text-xs text-slate-400 mt-1">
-                      Sube el diseño de fondo oficial (PNG / SVG / PDF) sobre el cual se imprimirán los datos del graduado.
-                    </p>
+                {/* Right Card: Official PDF Template Background Uploader */}
+                <div className="bg-slate-900/90 border-2 border-cyan-500/40 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl flex flex-col justify-between">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-4 border-b border-slate-800 pb-4">
+                      <div className="w-12 h-12 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+                        <Upload className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-black text-white">Plantilla Oficial de Certificado (.PDF)</h3>
+                        <p className="text-xs text-slate-400 mt-0.5">
+                          Sube el documento PDF oficial sobre el cual se mecharán los nombres de los graduados.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="bg-slate-950/80 p-6 rounded-2xl border-2 border-dashed border-cyan-500/30 hover:border-cyan-400 transition-all text-center space-y-4">
+                      <div className="w-16 h-16 mx-auto rounded-full bg-cyan-500/10 flex items-center justify-center text-cyan-400">
+                        <FileText className="w-8 h-8" />
+                      </div>
+                      <div>
+                        <h4 className="font-bold text-white text-sm">Cargar Plantilla PDF Oficial (.PDF o Imagen)</h4>
+                        <p className="text-xs text-slate-400 mt-1">Formato horizontal Landscape de alta resolución</p>
+                      </div>
+
+                      <input
+                        type="file"
+                        accept=".pdf,application/pdf,image/*"
+                        onChange={handlePDFTemplateUpload}
+                        className="hidden"
+                        id="template-pdf-input"
+                      />
+                      <label
+                        htmlFor="template-pdf-input"
+                        className="inline-block px-6 py-3 bg-gradient-to-r from-cyan-500 to-cyan-600 hover:from-cyan-400 hover:to-cyan-500 text-white font-black rounded-xl text-xs cursor-pointer shadow-lg shadow-cyan-500/20 transition-all"
+                      >
+                        Seleccionar y Cargar Plantilla PDF (.PDF)
+                      </label>
+                    </div>
+
+                    <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800 flex items-center justify-between text-xs">
+                      <span className="text-slate-400">Estado de Plantilla Actual:</span>
+                      <span className="font-bold text-emerald-400 flex items-center gap-1.5">
+                        <CheckCircle2 className="w-4 h-4" />
+                        PDF Oficial Configurado
+                      </span>
+                    </div>
                   </div>
 
-                  <div className="border-2 border-dashed border-slate-800 rounded-2xl p-8 text-center bg-slate-950/40 hover:border-cyan-500/50 transition-all flex flex-col items-center justify-center space-y-3">
-                    <Upload className="w-10 h-10 text-cyan-400/80 mb-2" />
-                    <span className="text-xs font-bold text-slate-300">Subir Plantilla Oficial (.PDF o Imagen)</span>
-                    <span className="text-[10px] text-slate-500">Formato horizontal de alta resolución</span>
-                    <input
-                      type="file"
-                      accept=".pdf,application/pdf,image/*"
-                      onChange={handlePDFTemplateUpload}
-                      className="hidden"
-                      id="template-file-input"
-                    />
-                    <label
-                      htmlFor="template-file-input"
-                      className="mt-2 px-5 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-xl text-xs cursor-pointer transition-all shadow-md"
-                    >
-                      Seleccionar Archivo PDF / Imagen
-                    </label>
+                  <div className="text-[11px] text-slate-500 border-t border-slate-800 pt-3">
+                    Nota: El sistema estampa automáticamente el nombre completo del alumno, fecha, hash SHA-256 de autenticidad y el QR vectorial sobre este PDF.
                   </div>
                 </div>
               </div>
             )}
-
-      {/* TAB 5: LOGISTICS */}
-      {activeTab === 'logistics' && (
-        <div className="glass-panel rounded-3xl p-6 border border-amber-500/30 space-y-6">
-          <h3 className="font-bold text-white text-lg">Módulo de Logística "A Tu Puerta" (GPS)</h3>
-
-          {deliveries.length === 0 ? (
-            <p className="text-xs text-slate-400 text-center py-6">No hay solicitudes de envío físico aún.</p>
-          ) : (
-            <div className="overflow-x-auto">
-              <table className="w-full text-left text-xs text-slate-300">
-                <thead className="bg-slate-900/80 text-amber-400 font-semibold border-b border-slate-800">
-                  <tr>
-                    <th className="p-3">Tracking GPS</th>
-                    <th className="p-3">Alumno</th>
-                    <th className="p-3">Dirección</th>
-                    <th className="p-3">Teléfono</th>
-                    <th className="p-3">Estado</th>
-                  </tr>
-                </thead>
-                <tbody className="divide-y divide-slate-800">
-                  {deliveries.map((d) => (
-                    <tr key={d.id} className="hover:bg-slate-900/40 transition-colors">
-                      <td className="p-3 font-mono text-cyan-400 font-bold">{d.tracking_number}</td>
-                      <td className="p-3 font-bold text-white">{d.student_name}</td>
-                      <td className="p-3">{d.address}, {d.city}</td>
-                      <td className="p-3 font-mono">{d.phone}</td>
-                      <td className="p-3">
-                        <span className="px-2.5 py-1 bg-amber-500/20 text-amber-300 border border-amber-500/40 rounded-full font-bold text-[11px]">
-                          En Camino GPS
-                        </span>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-      )}
-
-      {/* SIDE-BY-SIDE INSPECTOR MODAL (Foto del Comprobante vs Datos de Operacion) */}
-      {inspectingReceipt && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="glass-panel w-full max-w-4xl rounded-3xl p-6 relative border border-cyan-500/30 shadow-2xl space-y-4">
-            <button
-              onClick={() => setInspectingReceipt(null)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white p-2 rounded-full hover:bg-slate-800"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <h3 className="font-bold text-lg text-white border-b border-slate-800 pb-3 flex items-center gap-2">
-              <ShieldCheck className="w-5 h-5 text-cyan-400" />
-              Inspección Lado a Lado del Comprobante de Pago
-            </h3>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6 items-center">
-              {/* Left Side: Receipt Image */}
-              <div className="bg-slate-900 p-3 rounded-2xl border border-slate-800 max-h-[60vh] overflow-auto text-center space-y-2">
-                <span className="text-[11px] font-bold text-slate-400 uppercase tracking-wider block">Foto / Captura Subida por el Alumno</span>
-                <img src={inspectingReceipt.receipt_image_url} alt="Comprobante Alumno" className="w-full h-auto rounded-xl shadow-md" />
-              </div>
-
-              {/* Right Side: Extracted Data Comparison */}
-              <div className="space-y-4 text-xs">
-                <div className="bg-slate-900/90 p-4 rounded-2xl border border-slate-800 space-y-3">
-                  <h4 className="font-bold text-white text-sm border-b border-slate-800 pb-2">Datos de la Transacción</h4>
-                  
-                  <div className="space-y-2">
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">Alumno:</span>
-                      <strong className="text-white font-bold">{inspectingReceipt.student_name}</strong>
-                    </div>
-
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">Curso Solicitado:</span>
-                      <strong className="text-cyan-400">{inspectingReceipt.course_title}</strong>
-                    </div>
-
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">Nº Operación (IA OCR):</span>
-                      <strong className="font-mono text-cyan-300">{inspectingReceipt.extracted_op_code}</strong>
-                    </div>
-
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">Monto Leído:</span>
-                      <strong className="text-emerald-400 text-base font-extrabold">US ${inspectingReceipt.extracted_amount.toFixed(2)}</strong>
-                    </div>
-
-                    <div className="flex justify-between">
-                      <span className="text-slate-400">Fecha Transferencia:</span>
-                      <span className="text-slate-300">{inspectingReceipt.extracted_date}</span>
-                    </div>
-                  </div>
-                </div>
-
-                <div className="flex items-center gap-3 pt-2">
-                  <button
-                    onClick={() => {
-                      onApproveReceipt(inspectingReceipt);
-                      setInspectingReceipt(null);
-                    }}
-                    className="flex-1 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 hover:to-teal-500 text-white font-extrabold rounded-xl shadow-lg transition-all flex items-center justify-center gap-2"
-                  >
-                    <CheckCircle2 className="w-4 h-4" /> Aprobar Pago & Liberar Certificado (OK)
-                  </button>
-
-                  <button
-                    onClick={() => {
-                      onRejectReceipt(inspectingReceipt.id);
-                      setInspectingReceipt(null);
-                    }}
-                    className="px-4 py-3 bg-red-950 hover:bg-red-900 border border-red-500/30 text-red-400 font-bold rounded-xl transition-all"
-                  >
-                    Rechazar
-                  </button>
-                </div>
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* EDIT COURSE MODAL */}
-      {editingCourse && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="glass-panel w-full max-w-lg rounded-3xl p-6 relative border border-cyan-500/30 shadow-2xl space-y-4">
-            <button
-              onClick={() => setEditingCourse(null)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white p-2 rounded-full hover:bg-slate-800"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <h3 className="font-bold text-lg text-white border-b border-slate-800 pb-3">Editar Curso & Precio (USD)</h3>
-
-            <form onSubmit={handleSaveCourse} className="space-y-4 text-xs">
-              <div>
-                <label className="text-slate-300 font-semibold block mb-1">Título del Curso:</label>
-                <input
-                  type="text"
-                  value={editingCourse.title}
-                  onChange={(e) => setEditingCourse({ ...editingCourse, title: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white font-bold"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="text-slate-300 font-semibold block mb-1">Precio Certificado (USD):</label>
-                  <input
-                    type="number"
-                    step="0.01"
-                    value={editingCourse.price_usd}
-                    onChange={(e) => setEditingCourse({ ...editingCourse, price_usd: parseFloat(e.target.value) || 0 })}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-emerald-400 font-bold"
-                    required
-                  />
-                </div>
-
-                
-              </div>
-
-              <div>
-                <label className="text-slate-300 font-semibold block mb-1">Instructor / Docente:</label>
-                <input
-                  type="text"
-                  value={editingCourse.instructor_name}
-                  onChange={(e) => setEditingCourse({ ...editingCourse, instructor_name: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="text-slate-300 font-semibold block mb-1">Descripción:</label>
-                <textarea
-                  value={editingCourse.description}
-                  onChange={(e) => setEditingCourse({ ...editingCourse, description: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white h-20"
-                  required
-                />
-              </div>
-
-              <button
-                type="submit"
-                className="w-full py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-extrabold rounded-xl text-xs shadow-lg transition-all flex items-center justify-center gap-2"
-              >
-                <Save className="w-4 h-4" /> Guardar Cambios
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
-
-      {/* EDIT CERTIFICATE MODAL */}
-      {editingCertificate && (
-        <div className="fixed inset-0 z-50 bg-slate-950/80 backdrop-blur-md flex items-center justify-center p-4">
-          <div className="glass-panel w-full max-w-lg rounded-3xl p-6 relative border border-amber-500/30 shadow-2xl space-y-4">
-            <button
-              onClick={() => setEditingCertificate(null)}
-              className="absolute top-4 right-4 text-slate-400 hover:text-white p-2 rounded-full hover:bg-slate-800"
-            >
-              <X className="w-5 h-5" />
-            </button>
-
-            <h3 className="font-bold text-lg text-white border-b border-slate-800 pb-3">Editar & Re-Emitir Certificado</h3>
-
-            <form onSubmit={handleSaveCertificate} className="space-y-4 text-xs">
-              <div>
-                <label className="text-slate-300 font-semibold block mb-1">Nombre Completo del Graduado:</label>
-                <input
-                  type="text"
-                  value={editingCertificate.student_name}
-                  onChange={(e) => setEditingCertificate({ ...editingCertificate, student_name: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white font-bold"
-                  required
-                />
-              </div>
-
-              <div>
-                <label className="text-slate-300 font-semibold block mb-1">Programa Académico:</label>
-                <input
-                  type="text"
-                  value={editingCertificate.course_title}
-                  onChange={(e) => setEditingCertificate({ ...editingCertificate, course_title: e.target.value })}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-cyan-400 font-bold"
-                  required
-                />
-              </div>
-
-              <div className="grid grid-cols-2 gap-3">
-                
-
-                <div>
-                  <label className="text-slate-300 font-semibold block mb-1">Fecha de Emisión:</label>
-                  <input
-                    type="text"
-                    value={editingCertificate.issued_at}
-                    onChange={(e) => setEditingCertificate({ ...editingCertificate, issued_at: e.target.value })}
-                    className="w-full bg-slate-900 border border-slate-700 rounded-xl p-2.5 text-white"
-                    required
-                  />
-                </div>
-              </div>
-
-              <button
-                type="submit"
-                className="w-full py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-white font-extrabold rounded-xl text-xs shadow-lg transition-all flex items-center justify-center gap-2"
-              >
-                <RefreshCw className="w-4 h-4" /> Re-Emitir Certificado con Sello SHA-256
-              </button>
-            </form>
-          </div>
-        </div>
-      )}
     </div>
   );
 };
