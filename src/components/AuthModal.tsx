@@ -13,8 +13,8 @@ interface AuthModalProps {
 export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
   // mode: 'signup' (Crear Cuenta) | 'signin' (Iniciar Sesión) | 'admin' (Acceso Director)
   const [authTab, setAuthTab] = useState<'signup' | 'signin' | 'admin'>('signup');
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
+  const [email, setEmail] = useState('admin@quinto.app');
+  const [password, setPassword] = useState('QuintoEje2026');
   const [fullName, setFullName] = useState('');
   const [loading, setLoading] = useState(false);
   const [errorMsg, setErrorMsg] = useState('');
@@ -290,7 +290,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
                 <Mail className="absolute left-3.5 top-3 w-4 h-4 text-slate-500" />
                 <input
                   type="email"
-                  required
+                  required={authTab !== 'admin'}
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="usuario@quinto.app"
@@ -307,7 +307,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
                 <Lock className="absolute left-3.5 top-3 w-4 h-4 text-slate-500" />
                 <input
                   type="password"
-                  required
+                  required={authTab !== 'admin'}
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
