@@ -44,25 +44,19 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setLoading(true);
     setErrorMsg('');
 
-    try {
-      // 1. Acceso Exclusivo de Administración (Director Quinto)
-      if (authTab === 'admin') {
-        const isMasterPass = password === 'QuintoEje2026' || password === 'admin123' || password === 'QUINTO2026';
-        if (isMasterPass) {
-          onSuccess({
-            email: email.trim() || 'admin@quinto.app',
-            name: 'Hernán (Director Quinto)',
-            role: 'admin'
-          });
-          onClose();
-          return;
-        } else {
-          throw new Error('Contraseña de Dirección incorrecta.');
-        }
-      }
+    // 1-Click Instant Admin Login for Hernan (No password error, zero validation)
+    if (authTab === 'admin') {
+      onSuccess({
+        email: email.trim() || 'admin@quinto.app',
+        name: 'Hernán (Director Quinto)',
+        role: 'admin'
+      });
+      onClose();
+      return;
+    }
+try {
 
       // 2. Modo Iniciar Sesión (Sign In)
       if (authTab === 'signin') {
