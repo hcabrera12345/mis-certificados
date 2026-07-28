@@ -1,129 +1,48 @@
 import { supabase } from './supabaseClient';
 import { Course, PaymentReceipt, Certificate } from '@/types';
-import { MOCK_COURSES, INITIAL_RECEIPTS, INITIAL_CERTIFICATES } from './mockData';
+import { MOCK_COURSES } from './mockData';
 
-// Fetch Courses from Supabase DB
+// 1. Cursos
 export async function getCoursesFromDB(): Promise<Course[]> {
   try {
     const { data, error } = await supabase
       .from('courses')
       .select('*')
-      .order('created_at', { ascending: false });
+      .order('id', { ascending: true });
 
-    if (error || !data || data.length === 0) {
-      return MOCK_COURSES;
-    }
-    return data as Course[];
+    if (error) throw error;
+    if (data && data.length > 0) return data as Course[];
+    return MOCK_COURSES;
   } catch (err) {
+    console.error('Error obteniendo cursos de Supabase DB:', err);
     return MOCK_COURSES;
   }
 }
 
-// Fetch Receipts from Supabase DB
-export async function getReceiptsFromDB(): Promise<PaymentReceipt[]> {
+export async function saveCourseToDB(course: Course): Promise<boolean> {
   try {
-    const { data, error } = await supabase
-      .from('payment_receipts')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error || !data || data.length === 0) {
-      return INITIAL_RECEIPTS;
-    }
-    return data as PaymentReceipt[];
+    const { error } = await supabase
+      .from('courses')
+      .upsert({
+        id: course.id,
+        title: course.title,
+        description: course.description,
+        academic_hours: course.academic_hours || 40,
+        instructor_name: course.instructor_name || 'Directorio Quinto',
+        price_usd: course.price_usd,
+        image_url: course.image_url,
+        category: course.category || 'Capacitación',
+        is_active: course.is_active !== false
+      });
+    if (error) throw error;
+    return true;
   } catch (err) {
-    return INITIAL_RECEIPTS;
+    console.error('Error guardando curso en Supabase DB:', err);
+    return false;
   }
 }
 
-// Save New Payment Receipt to DB
-export async function saveReceiptToDB(receipt: PaymentReceipt): Promise<PaymentReceipt> {
-  try {
-    const { data, error } = await supabase
-      .from('payment_receipts')
-      .insert([
-        {
-          student_name: receipt.student_name,
-          course_title: receipt.course_title,
-          receipt_image_url: receipt.receipt_image_url,
-          receipt_hash: receipt.receipt_hash,
-          extracted_op_code: receipt.extracted_op_code,
-          extracted_amount: receipt.extracted_amount,
-          extracted_date: receipt.extracted_date,
-          extracted_sender: receipt.extracted_sender,
-          admin_approval_status: receipt.admin_approval_status
-        }
-      ])
-      .select()
-      .single();
-
-    if (error || !data) {
-      return receipt;
-    }
-    return data as PaymentReceipt;
-  } catch (err) {
-    return receipt;
-  }
-}
-
-// Fetch Certificates from Supabase DB
-export async function getCertificatesFromDB(): Promise<Certificate[]> {
-  try {
-    const { data, error } = await supabase
-      .from('certificates')
-      .select('*')
-      .order('created_at', { ascending: false });
-
-    if (error || !data || data.length === 0) {
-      return INITIAL_CERTIFICATES;
-    }
-    return data as Certificate[];
-  } catch (err) {
-    return INITIAL_CERTIFICATES;
-  }
-}
-
-// Save New Certificate to DB
-export async function saveCertificateToDB(cert: Certificate): Promise<Certificate> {
-  try {
-    const { data, error } = await supabase
-      .from('certificates')
-      .insert([
-        {
-          student_name: cert.student_name,
-          course_title: cert.course_title,
-          academic_hours: cert.academic_hours,
-          instructor_name: cert.instructor_name,
-          hash_sha256: cert.hash_sha256,
-          qr_code_url: cert.qr_code_url,
-          issued_at: cert.issued_at
-        }
-      ])
-      .select()
-      .single();
-
-    if (error || !data) {
-      return cert;
-    }
-    return data as Certificate;
-  } catch (err) {
-    return cert;
-  }
-}
-
-// Update Receipt Status in DB
-export async function updateReceiptStatusInDB(receiptId: string, status: 'approved' | 'rejected') {
-  try {
-    await supabase
-      .from('payment_receipts')
-      .update({ admin_approval_status: status })
-      .eq('id', receiptId);
-  } catch (err) {
-    console.error('Error updating receipt in DB:', err);
-  }
-}
-
-export async function deleteCourseFromDB(courseId: string) {
+export async function deleteCourseFromDB(courseId: string): Promise<boolean> {
   try {
     const { error } = await supabase
       .from('courses')
@@ -134,5 +53,106 @@ export async function deleteCourseFromDB(courseId: string) {
   } catch (err) {
     console.error('Error borrando curso de Supabase DB:', err);
     return false;
+  }
+}
+
+// 2. Comprobantes de Pago
+export async function getReceiptsFromDB(): Promise<PaymentReceipt[]> {
+  try {
+    const { data, error } = await supabase
+      .from('payment_receipts')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) throw error;
+    return (data || []) as PaymentReceipt[];
+  } catch (err) {
+    console.error('Error obteniendo comprobantes de Supabase DB:', err);
+    return [];
+  }
+}
+
+export async function saveReceiptToDB(receipt: PaymentReceipt): Promise<PaymentReceipt> {
+  try {
+    const { data, error } = await supabase
+      .from('payment_receipts')
+      .insert({
+        student_id: receipt.student_id,
+        student_name: receipt.student_name,
+        course_id: receipt.course_id,
+        course_title: receipt.course_title,
+        receipt_image_url: receipt.receipt_image_url,
+        receipt_hash: receipt.receipt_hash,
+        extracted_op_code: receipt.extracted_op_code,
+        extracted_amount: receipt.extracted_amount,
+        extracted_date: receipt.extracted_date,
+        extracted_sender: receipt.extracted_sender,
+        ocr_status: receipt.ocr_status,
+        admin_approval_status: receipt.admin_approval_status
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data as PaymentReceipt;
+  } catch (err) {
+    console.error('Error guardando comprobante en Supabase DB:', err);
+    return receipt;
+  }
+}
+
+export async function updateReceiptStatusInDB(receiptId: string, status: 'approved' | 'rejected') {
+  try {
+    const { error } = await supabase
+      .from('payment_receipts')
+      .update({ admin_approval_status: status })
+      .eq('id', receiptId);
+
+    if (error) throw error;
+    return true;
+  } catch (err) {
+    console.error('Error actualizando estado de comprobante:', err);
+    return false;
+  }
+}
+
+// 3. Certificados Emitidos
+export async function getCertificatesFromDB(): Promise<Certificate[]> {
+  try {
+    const { data, error } = await supabase
+      .from('certificates')
+      .select('*')
+      .order('issued_at', { ascending: false });
+
+    if (error) throw error;
+    return (data || []) as Certificate[];
+  } catch (err) {
+    console.error('Error obteniendo certificados de Supabase DB:', err);
+    return [];
+  }
+}
+
+export async function saveCertificateToDB(cert: Certificate): Promise<Certificate> {
+  try {
+    const { data, error } = await supabase
+      .from('certificates')
+      .insert({
+        enrollment_id: cert.enrollment_id,
+        student_name: cert.student_name,
+        course_title: cert.course_title,
+        academic_hours: cert.academic_hours,
+        instructor_name: cert.instructor_name,
+        hash_sha256: cert.hash_sha256,
+        qr_code_url: cert.qr_code_url,
+        issued_at: cert.issued_at
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data as Certificate;
+  } catch (err) {
+    console.error('Error guardando certificado en Supabase DB:', err);
+    return cert;
   }
 }
