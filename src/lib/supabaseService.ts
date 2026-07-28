@@ -160,68 +160,68 @@ export async function saveCertificateToDB(cert: Certificate): Promise<Certificat
 // ---------------------------------------------------------------------------
 
 // ---------------------------------------------------------------------------
-// INDESTRUCTIBLE CROSS-DEVICE PAYMENT QR PERSISTENCE (Supabase DB + Fallback)
+
+// ---------------------------------------------------------------------------
+// UNRESTRICTED PUBLIC PAYMENT QR DB & STORAGE SYNC
 // ---------------------------------------------------------------------------
 export async function getSystemSettingsFromDB(): Promise<{ payment_qr_url?: string } | null> {
   try {
-    // 1. Try fetching from system_settings table
-    const { data: sData, error: sErr } = await supabase
+    // A. Query system_settings table
+    const { data: sData } = await supabase
       .from('system_settings')
       .select('*')
       .eq('id', 'default_settings')
       .maybeSingle();
 
-    if (sData && sData.payment_qr_url) {
+    if (sData && sData.payment_qr_url && sData.payment_qr_url.length > 20) {
       return { payment_qr_url: sData.payment_qr_url };
     }
 
-    // 2. Fallback: try fetching system QR from courses table meta row (guaranteed table)
+    // B. Query courses table system row
     const { data: cData } = await supabase
       .from('courses')
-      .select('*')
+      .select('description')
       .eq('id', 'system-setting-qr')
       .maybeSingle();
 
-    if (cData && cData.description) {
+    if (cData && cData.description && cData.description.length > 20) {
       return { payment_qr_url: cData.description };
     }
 
     return null;
   } catch (err) {
-    console.error('Exception reading system_settings:', err);
+    console.error('Exception fetching public QR from DB:', err);
     return null;
   }
 }
 
 export async function saveSystemSettingsToDB(settings: { payment_qr_url?: string }): Promise<void> {
   if (!settings.payment_qr_url) return;
+  const qrData = settings.payment_qr_url;
 
+  // 1. Save to system_settings table
   try {
-    // 1. Try saving to system_settings table
-    await supabase
-      .from('system_settings')
-      .upsert({
-        id: 'default_settings',
-        payment_qr_url: settings.payment_qr_url,
-        updated_at: new Date().toISOString()
-      });
+    await supabase.from('system_settings').upsert({
+      id: 'default_settings',
+      payment_qr_url: qrData,
+      updated_at: new Date().toISOString()
+    });
   } catch (e) {}
 
+  // 2. Save to courses table system row
   try {
-    // 2. Dual-save to courses table meta row (guaranteed DB table)
-    await supabase
-      .from('courses')
-      .upsert({
-        id: 'system-setting-qr',
-        title: 'QUINTO_SYSTEM_SETTING_PAYMENT_QR',
-        category: 'SYSTEM',
-        price_usd: 0,
-        academic_hours: 0,
-        instructor_name: 'SYSTEM',
-        description: settings.payment_qr_url,
-        is_active: false
-      });
+    await supabase.from('courses').upsert({
+      id: 'system-setting-qr',
+      title: 'QUINTO_SYSTEM_SETTING_PAYMENT_QR',
+      category: 'SYSTEM',
+      price_usd: 0,
+      academic_hours: 0,
+      instructor_name: 'SYSTEM',
+      image_url: 'https://quintoejeingenieria.com/Quinto_Eje_logo_ALTA_CALIDAD.png',
+      description: qrData,
+      is_active: false
+    });
   } catch (e) {
-    console.error('Exception dual-saving QR to courses meta row:', e);
+    console.error('Error saving QR to DB system row:', e);
   }
 }
