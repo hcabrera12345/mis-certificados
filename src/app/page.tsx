@@ -115,9 +115,12 @@ export default function Home() {
 
       // B. Load Payment QR Code (LocalStorage + Supabase DB Global Sync)
       const savedQr = localStorage.getItem('quinto_payment_qr_url');
-      if (savedQr) {
-        setSystemSettings((prev) => ({ ...prev, payment_qr_url: savedQr || OFFICIAL_QUINTO_PAYMENT_QR_BASE64 }));
+      // If savedQr contains old certificate template base64 (iVBORw0KGgoAAAANSUhEUgAAAdk), purge it
+      if (savedQr && (savedQr.includes('AdkAAA') || savedQr.includes('AdkA') || savedQr.length > 50000)) {
+        localStorage.removeItem('quinto_payment_qr_url');
       }
+      const activeQr = localStorage.getItem('quinto_payment_qr_url') || 'https://i.imgur.com/NMnkr4t.png';
+      setSystemSettings((prev) => ({ ...prev, payment_qr_url: activeQr }));
 
       try {
         const dbSettings = await getSystemSettingsFromDB();
