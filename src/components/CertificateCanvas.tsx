@@ -50,44 +50,35 @@ export const CertificateCanvas: React.FC<CertificateCanvasProps> = ({
         const fontBold = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
         const fontRegular = await pdfDoc.embedFont(StandardFonts.Helvetica);
 
-        // Draw Student Full Name (Centered)
+        // Draw ONLY Student Full Name (Centered perfectly over the template line)
         const nameText = studentName || 'Nombre del Graduado';
-        const nameWidth = fontBold.widthOfTextAtSize(nameText, 32);
+        const fontSize = nameText.length > 25 ? 26 : 32;
+        const nameWidth = fontBold.widthOfTextAtSize(nameText, fontSize);
+        
+        // Target exact vertical position above line (approx 45% from bottom of page)
         page.drawText(nameText, {
           x: (width - nameWidth) / 2,
-          y: height / 2 + 10,
-          size: 32,
+          y: height * 0.44,
+          size: fontSize,
           font: fontBold,
-          color: rgb(0.05, 0.08, 0.15)
+          color: rgb(0.06, 0.11, 0.22) // Deep navy black matching template typography
         });
 
-        // Draw Course Title (Centered)
-        const courseText = courseTitle;
-        const courseWidth = fontRegular.widthOfTextAtSize(courseText, 16);
-        page.drawText(courseText, {
-          x: (width - courseWidth) / 2,
-          y: height / 2 - 25,
-          size: 16,
-          font: fontRegular,
-          color: rgb(0.1, 0.4, 0.7)
-        });
-
-        // Draw Issue Date
+        // Draw Issue Date & SHA-256 Hash in bottom left corner
         page.drawText(`Fecha de Emisión: ${issuedAt}`, {
-          x: 40,
-          y: 45,
-          size: 10,
-          font: fontRegular,
-          color: rgb(0.3, 0.3, 0.3)
-        });
-
-        // Draw SHA-256 Hash
-        page.drawText(`Firma SHA-256: ${hashSha256}`, {
-          x: 40,
-          y: 30,
+          x: 45,
+          y: 28,
           size: 8,
           font: fontRegular,
-          color: rgb(0.1, 0.6, 0.8)
+          color: rgb(0.35, 0.4, 0.45)
+        });
+
+        page.drawText(`SHA-256: ${hashSha256}`, {
+          x: 45,
+          y: 18,
+          size: 7,
+          font: fontRegular,
+          color: rgb(0.2, 0.5, 0.7)
         });
 
         // Draw QR Code Image onto PDF Page
