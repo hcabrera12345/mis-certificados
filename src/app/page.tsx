@@ -9,6 +9,7 @@ import { AdminDashboard } from '@/components/AdminDashboard';
 import { AuthModal } from '@/components/AuthModal';
 import { MOCK_COURSES, DEFAULT_SETTINGS } from '@/lib/mockData';
 import { Course, PaymentReceipt, Certificate, UserRole, SystemSettings } from '@/types';
+import { supabase } from '@/lib/supabaseClient';
 import { 
   getCoursesFromDB, 
   getReceiptsFromDB, 
@@ -27,15 +28,76 @@ export default function Home() {
   const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
   const [selectedHashForVerification, setSelectedHashForVerification] = useState<string | null>(null);
 
-  // Core State
+  // Core Dynamic State
   const [courses, setCourses] = useState<Course[]>(MOCK_COURSES);
   const [receipts, setReceipts] = useState<PaymentReceipt[]>([]);
   const [certificates, setCertificates] = useState<Certificate[]>([]);
   const [systemSettings, setSystemSettings] = useState<SystemSettings>(DEFAULT_SETTINGS);
 
-  // 1. Initial Load Effect with Indestructible LocalStorage & DB Persistence
+  // ---------------------------------------------------------------------------
+  // 1. AUTHENTICATION MOTOR: Google OAuth Hash Parser & Supabase Session Listener
+  // ---------------------------------------------------------------------------
   useEffect(() => {
-    async function loadInitialData() {
+    // A. Parse Direct Hash Token from Google OAuth redirect (#access_token=...)
+    const checkDirectHashToken = async () => {
+      if (typeof window !== 'undefined' && window.location.hash.includes('access_token')) {
+        const hashParams = new URLSearchParams(window.location.hash.substring(1));
+        const accessToken = hashParams.get('access_token');
+        const refreshToken = hashParams.get('refresh_token');
+
+        if (accessToken) {
+          try {
+            const { data, error } = await supabase.auth.setSession({
+              access_token: accessToken,
+              refresh_token: refreshToken || ''
+            });
+
+            if (data.session?.user) {
+              const u = data.session.user;
+              setUserProfile({
+                email: u.email || 'usuario@quinto.app',
+                name: u.user_metadata?.full_name || u.email?.split('@')[0] || 'Usuario Quinto',
+                role: u.email === 'admin@quinto.app' ? 'admin' : 'student'
+              });
+              setUserRole(u.email === 'admin@quinto.app' ? 'admin' : 'student');
+              // Clear URL hash cleanly
+              window.history.replaceState(null, '', window.location.pathname);
+            }
+          } catch (e) {
+            console.error('Error setting OAuth session:', e);
+          }
+        }
+      }
+    };
+
+    checkDirectHashToken();
+
+    // B. Supabase Session Listener
+    const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        const u = session.user;
+        setUserProfile({
+          email: u.email || 'usuario@quinto.app',
+          name: u.user_metadata?.full_name || u.email?.split('@')[0] || 'Usuario Quinto',
+          role: u.email === 'admin@quinto.app' ? 'admin' : 'student'
+        });
+        setUserRole(u.email === 'admin@quinto.app' ? 'admin' : 'student');
+      } else {
+        // Keep profile if manually logged in via master admin key
+        setUserProfile((prev) => (prev?.role === 'admin' ? prev : null));
+      }
+    });
+
+    return () => {
+      authListener.subscription.unsubscribe();
+    };
+  }, []);
+
+  // ---------------------------------------------------------------------------
+  // 2. DATA PERSISTENCE: Dynamic Courses, QR Code, Receipts & Certificates
+  // ---------------------------------------------------------------------------
+  useEffect(() => {
+    async function loadData() {
       // A. Load Courses from LocalStorage first
       const savedCourses = localStorage.getItem('quinto_courses_list');
       if (savedCourses) {
@@ -45,17 +107,17 @@ export default function Home() {
             setCourses(parsed);
           }
         } catch (e) {
-          console.error('Error reading saved courses:', e);
+          console.error('Error loading saved courses:', e);
         }
       }
 
-      // B. Load System Settings / Payment QR
+      // B. Load Payment QR Code
       const savedQr = localStorage.getItem('quinto_payment_qr_url');
       if (savedQr) {
         setSystemSettings((prev) => ({ ...prev, payment_qr_url: savedQr }));
       }
 
-      // C. Fetch Live DB Data
+      // C. Sync DB Data
       try {
         const dbCourses = await getCoursesFromDB();
         if (dbCourses && dbCourses.length > 0 && !savedCourses) {
@@ -69,19 +131,19 @@ export default function Home() {
         const dbCerts = await getCertificatesFromDB();
         if (dbCerts) setCertificates(dbCerts);
       } catch (err) {
-        console.error('Error sync DB data:', err);
+        console.error('Error syncing DB data:', err);
       }
     }
 
-    loadInitialData();
+    loadData();
   }, []);
 
-  // 2. Course Handlers (Persist Edits & Deletions)
+  // ---------------------------------------------------------------------------
+  // 3. ADMIN COURSE MUTATION HANDLERS (Real-time Sync to User View)
+  // ---------------------------------------------------------------------------
   const handleUpdateCourses = async (updatedCourses: Course[]) => {
     setCourses(updatedCourses);
     localStorage.setItem('quinto_courses_list', JSON.stringify(updatedCourses));
-    
-    // Save to Supabase DB in background
     for (const c of updatedCourses) {
       await saveCourseToDB(c);
     }
@@ -94,7 +156,9 @@ export default function Home() {
     await deleteCourseFromDB(courseId);
   };
 
-  // 3. Receipt Handlers
+  // ---------------------------------------------------------------------------
+  // 4. RECEIPT & CERTIFICATE HANDLERS
+  // ---------------------------------------------------------------------------
   const handleCreateReceipt = async (newReceipt: PaymentReceipt) => {
     setReceipts((prev) => [newReceipt, ...prev]);
     await saveReceiptToDB(newReceipt);
@@ -106,7 +170,6 @@ export default function Home() {
     );
     await updateReceiptStatusInDB(receipt.id, 'approved');
 
-    // Issue Certificate
     const newCert: Certificate = {
       id: 'cert-' + Date.now(),
       enrollment_id: receipt.id,
@@ -153,6 +216,13 @@ export default function Home() {
     setCurrentTab('verify');
   };
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    setUserProfile(null);
+    setUserRole('student');
+    setCurrentTab('courses');
+  };
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-cyan-500 selection:text-white">
       <Navbar
@@ -162,11 +232,7 @@ export default function Home() {
         setUserRole={setUserRole}
         userProfile={userProfile}
         onOpenAuth={() => setShowAuthModal(true)}
-        onLogout={() => {
-          setUserProfile(null);
-          setUserRole('student');
-          setCurrentTab('courses');
-        }}
+        onLogout={handleLogout}
       />
 
       <main className="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
@@ -189,7 +255,10 @@ export default function Home() {
         )}
 
         {currentTab === 'verify' && (
-          <PublicVerification certificates={certificates} initialHash={selectedHashForVerification || undefined} />
+          <PublicVerification 
+            certificates={certificates}
+            initialHash={selectedHashForVerification || undefined} 
+          />
         )}
 
         {currentTab === 'admin' && userRole === 'admin' && (
