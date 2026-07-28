@@ -194,6 +194,7 @@ export default function Home() {
     });
     await updateReceiptStatusInDB(receipt.id, 'approved');
 
+    const validHash = receipt.receipt_hash || ('SHA256-' + Math.random().toString(36).substring(2, 10) + Math.random().toString(36).substring(2, 10)).toUpperCase();
     const newCert: Certificate = {
       id: 'cert-' + Date.now(),
       enrollment_id: receipt.id,
@@ -201,8 +202,8 @@ export default function Home() {
       course_title: receipt.course_title,
       academic_hours: 40,
       instructor_name: 'Directorio Quinto',
-      hash_sha256: receipt.receipt_hash || 'SHA256-' + Math.random().toString(36).substring(2, 12).toUpperCase(),
-      qr_code_url: `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=https://mis-certificados.quinto.app/validar/${receipt.receipt_hash}`,
+      hash_sha256: validHash,
+      qr_code_url: `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https://mis-certificados.quinto.app/validar/${validHash}`,
       issued_at: new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })
     };
 

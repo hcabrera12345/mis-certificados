@@ -81,20 +81,43 @@ export const CertificateCanvas: React.FC<CertificateCanvasProps> = ({
           color: rgb(0.2, 0.5, 0.7)
         });
 
-        // Draw QR Code Image onto PDF Page
-        if (qrCodeUrl) {
-          try {
-            const qrResponse = await fetch(qrCodeUrl);
+        // Draw QR Code Image onto PDF Page with Robust Fallback URL
+        const safeHash = hashSha256 || 'VALID-QUINTO-CERT';
+        const targetQrUrl = qrCodeUrl && !qrCodeUrl.includes('undefined')
+          ? qrCodeUrl 
+          : `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=https://mis-certificados.quinto.app/validar/${safeHash}`;
+
+        try {
+          const qrResponse = await fetch(targetQrUrl);
+          if (qrResponse.ok) {
             const qrBlob = await qrResponse.arrayBuffer();
             const qrImage = await pdfDoc.embedPng(qrBlob);
             page.drawImage(qrImage, {
-              x: width - 110,
-              y: 25,
+              x: width - 115,
+              y: 20,
               width: 75,
               height: 75
             });
-          } catch (e) {
-            console.error('Error Embedding QR image into PDF:', e);
+          } else {
+            throw new Error('HTTP QR response not ok');
+          }
+        } catch (e) {
+          console.error('Error Embedding primary QR image, applying secondary fallback:', e);
+          try {
+            const fallbackQrUrl = `https://chart.googleapis.com/chart?cht=qr&chs=300x300&chl=https://mis-certificados.quinto.app/validar/${safeHash}`;
+            const qrResponse2 = await fetch(fallbackQrUrl);
+            if (qrResponse2.ok) {
+              const qrBlob2 = await qrResponse2.arrayBuffer();
+              const qrImage2 = await pdfDoc.embedPng(qrBlob2);
+              page.drawImage(qrImage2, {
+                x: width - 115,
+                y: 20,
+                width: 75,
+                height: 75
+              });
+            }
+          } catch (e2) {
+            console.error('Secondary QR fallback failed:', e2);
           }
         }
 
