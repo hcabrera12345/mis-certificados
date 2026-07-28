@@ -92,7 +92,14 @@ export const PaymentOCRModal: React.FC<PaymentOCRModalProps> = ({
           <div className="bg-slate-900/90 p-4 rounded-2xl border border-slate-800 text-center space-y-3">
             <span className="text-xs font-bold text-amber-400 uppercase tracking-wider block">QR OFICIAL DE PAGO QUINTO</span>
             <div className="bg-white p-3 rounded-xl inline-block shadow-md max-w-[180px] mx-auto">
-              <img src={paymentQrUrl} alt="QR Oficial de Pago Quinto" className="w-full h-auto rounded-lg" />
+              <img
+                  src={paymentQrUrl || 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=QUINTO_EJE_PAGO_OFICIAL'}
+                  onError={(e) => {
+                    e.currentTarget.src = 'https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=QUINTO_EJE_PAGO_OFICIAL';
+                  }}
+                  alt="QR Oficial de Pago Quinto"
+                  className="w-full h-auto rounded-xl border border-slate-700 bg-white p-2 shadow-inner object-contain max-h-[220px]"
+                />
             </div>
             <div className="text-xs text-slate-300">
               <p className="font-semibold">Monto a Transferir:</p>

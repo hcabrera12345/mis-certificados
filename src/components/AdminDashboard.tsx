@@ -71,9 +71,16 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   const handleQRUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
-      const url = URL.createObjectURL(file);
-      onUpdateSettings({ ...systemSettings, payment_qr_url: url });
-      alert('¡QR de Pago Oficial cargado exitosamente! Ahora los alumnos verán este código al pagar.');
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const dataUrl = event.target?.result as string;
+        if (dataUrl) {
+          onUpdateSettings({ ...systemSettings, payment_qr_url: dataUrl });
+          localStorage.setItem('quinto_payment_qr_url', dataUrl);
+          alert('¡QR de Pago Oficial guardado e integrado exitosamente en alta definición!');
+        }
+      };
+      reader.readAsDataURL(file);
     }
   };
 
