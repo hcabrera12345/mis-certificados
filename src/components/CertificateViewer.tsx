@@ -1,4 +1,5 @@
 'use client';
+import { CertificateCanvas } from './CertificateCanvas';
 
 import React from 'react';
 import { Award, Download, CheckCircle, ExternalLink, Calendar, Clock, ShieldCheck, User } from 'lucide-react';

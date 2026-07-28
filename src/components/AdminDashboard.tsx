@@ -68,6 +68,21 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     alert('¡Certificado actualizado y re-emitido con sello SHA-256!');
   };
 
+    const handleTemplateUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const dataUrl = event.target?.result as string;
+        if (dataUrl) {
+          localStorage.setItem('quinto_cert_template_url', dataUrl);
+          alert('¡Plantilla Oficial de Certificado subida e integrada al motor de emisión de PDF!');
+        }
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   const handleQRUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -399,7 +414,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
               <input
                 type="file"
                 accept="image/*"
-                onChange={() => alert('¡Fondo de Plantilla oficial subida y vinculada al motor de renderizado!')}
+                onChange={handleTemplateUpload}
                 className="hidden"
               />
             </label>
