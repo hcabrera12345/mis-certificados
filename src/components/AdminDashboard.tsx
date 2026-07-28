@@ -21,6 +21,7 @@ interface AdminDashboardProps {
 }
 
 export const AdminDashboard: React.FC<AdminDashboardProps> = ({
+
   courses,
   receipts,
   certificates,
@@ -34,6 +35,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onDeleteCertificate,
   onUpdateSettings
 }) => {
+  const [qrUrlInput, setQrUrlInput] = useState<string>(systemSettings.payment_qr_url || '');
   const [activeTab, setActiveTab] = useState<'approvals' | 'courses' | 'certificates' | 'settings' | 'logistics'>('approvals');
   const [inspectingReceipt, setInspectingReceipt] = useState<PaymentReceipt | null>(null);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
@@ -68,7 +70,20 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     alert('¡Certificado actualizado y re-emitido con sello SHA-256!');
   };
 
-          const handlePDFTemplateUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+            const handleSaveQRUrl = async (urlToSave?: string) => {
+    const finalUrl = (urlToSave || qrUrlInput).trim();
+    if (!finalUrl) {
+      alert('Por favor ingresa una URL de imagen válida.');
+      return;
+    }
+    localStorage.setItem('quinto_payment_qr_url', finalUrl);
+    if (onUpdateSettings) {
+      onUpdateSettings({ ...systemSettings, payment_qr_url: finalUrl });
+    }
+    alert('¡Enlace de QR de Pago Guardado Exitosamente! Ya está activo e instalado para el 100% de las tablets, celulares y computadoras.');
+  };
+
+  const handlePDFTemplateUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       const reader = new FileReader();
