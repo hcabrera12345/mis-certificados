@@ -125,11 +125,29 @@ export default function Home() {
           localStorage.setItem('quinto_courses_list', JSON.stringify(dbCourses));
         }
 
+        // Load Receipts & Certificates from LocalStorage first for instant persistence
+        const savedReceipts = localStorage.getItem('quinto_receipts_list');
+        if (savedReceipts) {
+          try {
+            const parsedR = JSON.parse(savedReceipts);
+            if (Array.isArray(parsedR)) setReceipts(parsedR);
+          } catch(e) {}
+        }
+
+        const savedCerts = localStorage.getItem('quinto_certificates_list');
+        if (savedCerts) {
+          try {
+            const parsedC = JSON.parse(savedCerts);
+            if (Array.isArray(parsedC)) setCertificates(parsedC);
+          } catch(e) {}
+        }
+
+        // Fetch DB data
         const dbReceipts = await getReceiptsFromDB();
-        if (dbReceipts) setReceipts(dbReceipts);
+        if (dbReceipts && dbReceipts.length > 0 && !savedReceipts) setReceipts(dbReceipts);
 
         const dbCerts = await getCertificatesFromDB();
-        if (dbCerts) setCertificates(dbCerts);
+        if (dbCerts && dbCerts.length > 0 && !savedCerts) setCertificates(dbCerts);
       } catch (err) {
         console.error('Error syncing DB data:', err);
       }
@@ -160,14 +178,20 @@ export default function Home() {
   // 4. RECEIPT & CERTIFICATE HANDLERS
   // ---------------------------------------------------------------------------
   const handleCreateReceipt = async (newReceipt: PaymentReceipt) => {
-    setReceipts((prev) => [newReceipt, ...prev]);
+    setReceipts((prev) => {
+      const updated = [newReceipt, ...prev];
+      localStorage.setItem('quinto_receipts_list', JSON.stringify(updated));
+      return updated;
+    });
     await saveReceiptToDB(newReceipt);
   };
 
   const handleApproveReceipt = async (receipt: PaymentReceipt) => {
-    setReceipts((prev) =>
-      prev.map((r) => (r.id === receipt.id ? { ...r, admin_approval_status: 'approved' } : r))
-    );
+    setReceipts((prev) => {
+      const updatedR = prev.map((r) => (r.id === receipt.id ? { ...r, admin_approval_status: 'approved' as const } : r));
+      localStorage.setItem('quinto_receipts_list', JSON.stringify(updatedR));
+      return updatedR;
+    });
     await updateReceiptStatusInDB(receipt.id, 'approved');
 
     const newCert: Certificate = {
@@ -182,7 +206,11 @@ export default function Home() {
       issued_at: new Date().toLocaleDateString('es-ES', { day: '2-digit', month: 'long', year: 'numeric' })
     };
 
-    setCertificates((prev) => [newCert, ...prev]);
+    setCertificates((prev) => {
+      const updatedC = [newCert, ...prev];
+      localStorage.setItem('quinto_certificates_list', JSON.stringify(updatedC));
+      return updatedC;
+    });
     await saveCertificateToDB(newCert);
   };
 
