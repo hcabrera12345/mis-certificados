@@ -335,6 +335,9 @@ export default function Home() {
           onSuccess={(profile) => {
             setUserProfile(profile);
             setUserRole(profile.role);
+            if (profile.role === 'admin') {
+              setCurrentTab('admin');
+            }
             setShowAuthModal(false);
           }}
         />
