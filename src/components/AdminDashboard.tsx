@@ -1,4 +1,5 @@
 'use client';
+import { OFFICIAL_QUINTO_PAYMENT_QR_BASE64 } from '@/lib/mockData';
 
 import React, { useState } from 'react';
 import { X, Award, Users, DollarSign, ShieldCheck, CheckCircle2, XCircle, Send, Upload, Eye, Edit, Plus, Trash2, Save, FileSpreadsheet, QrCode, Image as ImageIcon, Truck, RefreshCw, Check, AlertTriangle, ShieldAlert } from 'lucide-react';
@@ -405,54 +406,93 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       )}
 
       {/* TAB 4: UPLOAD PAYMENT QR & TEMPLATES */}
-      {activeTab === 'settings' && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
-          <div className="glass-panel p-6 rounded-3xl border border-amber-500/30 space-y-4">
-            <div className="flex items-center gap-2">
-              <QrCode className="w-5 h-5 text-amber-400" />
-              <h3 className="font-bold text-white text-base">Cargar QR Oficial de Pago (Yape / Plin / Banco)</h3>
-            </div>
-            <p className="text-xs text-slate-400">
-              Sube la imagen de tu código QR real. Este código es el que verán los alumnos cuando presionen "Pagar / Solicitar Certificado".
-            </p>
+                  {/* TAB 4: UPLOAD PAYMENT QR & TEMPLATES */}
+            {activeTab === 'settings' && (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6 animate-fade-in">
+                {/* Left Box: Official Payment QR Code (Banco Ganadero S.A. / Yape / Plin) */}
+                <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl">
+                  <div>
+                    <h3 className="font-bold text-white text-base">Cargar QR Oficial de Pago (Yape / Plin / Banco)</h3>
+                    <p className="text-xs text-slate-400 mt-1">
+                      Sube la imagen de tu código QR real o pega su enlace URL directo. Este código es el que verán los alumnos cuando presionen "Pagar / Solicitar Certificado".
+                    </p>
+                  </div>
 
-            <div className="bg-slate-900 p-4 rounded-2xl border border-slate-800 text-center space-y-3">
-              <div className="bg-white p-3 rounded-xl inline-block max-w-[180px] mx-auto shadow-md">
-                <img src={systemSettings.payment_qr_url} alt="QR Oficial" className="w-full h-auto rounded-lg" />
+                  <div className="w-52 h-52 sm:w-60 sm:h-60 mx-auto bg-white p-3 rounded-2xl shadow-inner flex items-center justify-center overflow-hidden border-2 border-amber-500/40">
+                    <img
+                      src={systemSettings.payment_qr_url || OFFICIAL_QUINTO_PAYMENT_QR_BASE64}
+                      alt="QR Oficial de Pago Quinto"
+                      className="w-full h-full object-contain select-none"
+                    />
+                  </div>
+
+                  {/* Option A: File Upload Button */}
+                  <div className="pt-2">
+                    <label className="w-full py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-slate-950 font-extrabold rounded-xl text-xs flex items-center justify-center gap-2 cursor-pointer transition-all shadow-md">
+                      <span>Subir Nueva Imagen de QR</span>
+                      <input
+                        type="file"
+                        accept="image/*"
+                        onChange={handleQRUpload}
+                        className="hidden"
+                      />
+                    </label>
+                  </div>
+
+                  {/* Option B: Direct URL Input Box */}
+                  <div className="space-y-2 pt-3 border-t border-slate-800">
+                    <label className="block text-xs font-bold text-cyan-400 uppercase tracking-wider">
+                      🔗 O Pegar Enlace / URL Directa de Imagen del QR:
+                    </label>
+                    <div className="flex gap-2">
+                      <input
+                        type="url"
+                        value={qrUrlInput}
+                        onChange={(e) => setQrUrlInput(e.target.value)}
+                        placeholder="https://..."
+                        className="flex-1 bg-slate-950 border border-slate-700 rounded-xl px-3 py-2 text-xs text-white font-mono focus:outline-none focus:border-cyan-500"
+                      />
+                      <button
+                        type="button"
+                        onClick={() => handleSaveQRUrl()}
+                        className="px-4 py-2 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-xl text-xs transition-all cursor-pointer"
+                      >
+                        Guardar URL
+                      </button>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Right Box: Certificate Template Background */}
+                <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 space-y-4 shadow-xl flex flex-col justify-between">
+                  <div>
+                    <h3 className="font-bold text-white text-base">Cargar Fondo de Plantilla de Certificado</h3>
+                    <p className="text-xs text-slate-400 mt-1">
+                      Sube el diseño de fondo oficial (PNG / SVG / PDF) sobre el cual se imprimirán los datos del graduado.
+                    </p>
+                  </div>
+
+                  <div className="border-2 border-dashed border-slate-800 rounded-2xl p-8 text-center bg-slate-950/40 hover:border-cyan-500/50 transition-all flex flex-col items-center justify-center space-y-3">
+                    <Upload className="w-10 h-10 text-cyan-400/80 mb-2" />
+                    <span className="text-xs font-bold text-slate-300">Subir Plantilla Oficial (.PDF o Imagen)</span>
+                    <span className="text-[10px] text-slate-500">Formato horizontal de alta resolución</span>
+                    <input
+                      type="file"
+                      accept=".pdf,application/pdf,image/*"
+                      onChange={handlePDFTemplateUpload}
+                      className="hidden"
+                      id="template-file-input"
+                    />
+                    <label
+                      htmlFor="template-file-input"
+                      className="mt-2 px-5 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white font-bold rounded-xl text-xs cursor-pointer transition-all shadow-md"
+                    >
+                      Seleccionar Archivo PDF / Imagen
+                    </label>
+                  </div>
+                </div>
               </div>
-
-              <label className="block">
-                <span className="px-4 py-2 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-white font-bold rounded-xl text-xs cursor-pointer shadow-md inline-flex items-center gap-2">
-                  <Upload className="w-4 h-4" /> Subir Nueva Imagen de QR
-                </span>
-                <input type="file" accept=".pdf,application/pdf,image/*" onChange={handleQRUpload} className="hidden" />
-              </label>
-            </div>
-          </div>
-
-          <div className="glass-panel p-6 rounded-3xl border border-cyan-500/30 space-y-4">
-            <div className="flex items-center gap-2">
-              <ImageIcon className="w-5 h-5 text-cyan-400" />
-              <h3 className="font-bold text-white text-base">Cargar Fondo de Plantilla de Certificado</h3>
-            </div>
-            <p className="text-xs text-slate-400">
-              Sube el diseño de fondo oficial (PNG / SVG / PDF) sobre el cual se imprimirán los datos del graduado.
-            </p>
-
-            <label className="border-2 border-dashed border-slate-700 hover:border-cyan-500 bg-slate-900/50 hover:bg-slate-900 rounded-2xl p-8 flex flex-col items-center justify-center cursor-pointer transition-all space-y-2">
-              <Upload className="w-8 h-8 text-cyan-400" />
-              <span className="text-xs font-bold text-slate-300">Subir Plantilla Oficial (.PDF o Imagen)</span>
-              <span className="text-[10px] text-slate-500">Formato horizontal de alta resolución</span>
-              <input
-                type="file"
-                accept=".pdf,application/pdf,image/*"
-                onChange={handlePDFTemplateUpload}
-                className="hidden"
-              />
-            </label>
-          </div>
-        </div>
-      )}
+            )}
 
       {/* TAB 5: LOGISTICS */}
       {activeTab === 'logistics' && (
