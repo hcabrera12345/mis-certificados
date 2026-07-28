@@ -272,6 +272,15 @@ export default function Home() {
         setUserRole={setUserRole}
         userProfile={userProfile}
         onOpenAuth={() => setShowAuthModal(true)}
+        onDirectAdminLogin={() => {
+          setUserRole('admin');
+          setUserProfile({
+            email: 'admin@quinto.app',
+            name: 'Hernán (Director Quinto)',
+            role: 'admin'
+          });
+          setCurrentTab('admin');
+        }}
         onLogout={handleLogout}
       />
 

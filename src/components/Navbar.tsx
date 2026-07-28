@@ -6,6 +6,7 @@ import { Award, BookOpen, ShieldCheck, LayoutDashboard, LogIn, LogOut, User } fr
 import { UserRole } from '@/types';
 
 interface NavbarProps {
+  onDirectAdminLogin?: () => void;
   currentTab: string;
   setCurrentTab: (tab: string) => void;
   userRole: UserRole;
