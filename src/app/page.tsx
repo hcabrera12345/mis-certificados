@@ -18,7 +18,9 @@ import {
   saveCertificateToDB, 
   updateReceiptStatusInDB,
   saveCourseToDB,
-  deleteCourseFromDB 
+  deleteCourseFromDB,
+  getSystemSettingsFromDB,
+  saveSystemSettingsToDB
 } from '@/lib/supabaseService';
 
 export default function Home() {
@@ -111,11 +113,19 @@ export default function Home() {
         }
       }
 
-      // B. Load Payment QR Code
+      // B. Load Payment QR Code (LocalStorage + Supabase DB Global Sync)
       const savedQr = localStorage.getItem('quinto_payment_qr_url');
       if (savedQr) {
         setSystemSettings((prev) => ({ ...prev, payment_qr_url: savedQr }));
       }
+
+      try {
+        const dbSettings = await getSystemSettingsFromDB();
+        if (dbSettings?.payment_qr_url) {
+          setSystemSettings((prev) => ({ ...prev, payment_qr_url: dbSettings.payment_qr_url! }));
+          localStorage.setItem('quinto_payment_qr_url', dbSettings.payment_qr_url);
+        }
+      } catch (e) {}
 
       // C. Sync DB Data
       try {
@@ -233,10 +243,11 @@ export default function Home() {
     setCertificates((prev) => prev.filter((c) => c.id !== certId));
   };
 
-  const handleUpdateSettings = (newSettings: SystemSettings) => {
+  const handleUpdateSettings = async (newSettings: SystemSettings) => {
     setSystemSettings(newSettings);
     if (newSettings.payment_qr_url) {
       localStorage.setItem('quinto_payment_qr_url', newSettings.payment_qr_url);
+      await saveSystemSettingsToDB({ payment_qr_url: newSettings.payment_qr_url });
     }
   };
 

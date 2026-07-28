@@ -156,3 +156,43 @@ export async function saveCertificateToDB(cert: Certificate): Promise<Certificat
     return cert;
   }
 }
+
+// ---------------------------------------------------------------------------
+// SYSTEM SETTINGS & PAYMENT QR GLOBAL PERSISTENCE
+// ---------------------------------------------------------------------------
+export async function getSystemSettingsFromDB(): Promise<{ payment_qr_url?: string } | null> {
+  try {
+    const { data, error } = await supabase
+      .from('system_settings')
+      .select('*')
+      .eq('id', 'default_settings')
+      .maybeSingle();
+
+    if (error) {
+      console.warn('Error fetching system_settings from DB:', error.message);
+      return null;
+    }
+    return data ? { payment_qr_url: data.payment_qr_url } : null;
+  } catch (err) {
+    console.error('Exception reading system_settings:', err);
+    return null;
+  }
+}
+
+export async function saveSystemSettingsToDB(settings: { payment_qr_url?: string }): Promise<void> {
+  try {
+    const { error } = await supabase
+      .from('system_settings')
+      .upsert({
+        id: 'default_settings',
+        payment_qr_url: settings.payment_qr_url,
+        updated_at: new Date().toISOString()
+      });
+
+    if (error) {
+      console.warn('Error saving system_settings to DB:', error.message);
+    }
+  } catch (err) {
+    console.error('Exception saving system_settings:', err);
+  }
+}
