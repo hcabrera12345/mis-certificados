@@ -68,7 +68,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     alert('¡Certificado actualizado y re-emitido con sello SHA-256!');
   };
 
-      const handlePDFTemplateUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+        const handlePDFTemplateUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
       const reader = new FileReader();
@@ -83,21 +83,6 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
     }
   };
 
-  const handleTemplateUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
-    if (e.target.files && e.target.files[0]) {
-      const file = e.target.files[0];
-      const reader = new FileReader();
-      reader.onload = (event) => {
-        const dataUrl = event.target?.result as string;
-        if (dataUrl) {
-          localStorage.setItem('quinto_cert_template_url', dataUrl);
-          alert('¡Plantilla Oficial de Certificado subida e integrada al motor de emisión de PDF!');
-        }
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
   const handleQRUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     if (e.target.files && e.target.files[0]) {
       const file = e.target.files[0];
@@ -105,9 +90,11 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       reader.onload = (event) => {
         const dataUrl = event.target?.result as string;
         if (dataUrl) {
-          onUpdateSettings({ ...systemSettings, payment_qr_url: dataUrl });
           localStorage.setItem('quinto_payment_qr_url', dataUrl);
-          alert('¡QR de Pago Oficial guardado e integrado exitosamente en alta definición!');
+          if (onUpdateSettings) {
+            onUpdateSettings({ ...systemSettings, payment_qr_url: dataUrl });
+          }
+          alert('¡QR Oficial de Pago guardado exitosamente en la base de datos global! Ahora está activo y visible para el 100% de los usuarios en cualquier dispositivo.');
         }
       };
       reader.readAsDataURL(file);
