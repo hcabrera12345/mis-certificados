@@ -340,7 +340,7 @@ export const AuthModal: React.FC<AuthModalProps> = ({ onClose, onSuccess }) => {
               ) : (
                 <>
                   <Shield className="w-4 h-4" />
-                  Ingresar a Consola de Dirección
+                  Ingresar a Consola de Dirección (1-Clic)
                 </>
               )}
             </button>
