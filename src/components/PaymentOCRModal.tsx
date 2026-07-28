@@ -5,6 +5,21 @@ import { X, Upload, QrCode, CheckCircle2, ShieldCheck, FileText, Send, DollarSig
 import { Course, PaymentReceipt } from '@/types';
 import { OFFICIAL_QUINTO_PAYMENT_QR_BASE64 } from '@/lib/mockData';
 
+export function getDirectImageUrl(url: string): string {
+  if (!url) return '';
+  let cleanUrl = url.trim();
+  // Convert Imgur album/page URLs (e.g. https://imgur.com/a/NMnkr4t or https://imgur.com/NMnkr4t) to direct image URLs (https://i.imgur.com/NMnkr4t.png)
+  if (cleanUrl.includes('imgur.com')) {
+    const parts = cleanUrl.split('/');
+    const lastPart = parts[parts.length - 1].split('?')[0].split('#')[0];
+    if (lastPart && lastPart !== 'a') {
+      return `https://i.imgur.com/${lastPart}.png`;
+    }
+  }
+  return cleanUrl;
+}
+
+
 interface PaymentOCRModalProps {
   course: Course;
   paymentQrUrl: string;
@@ -122,7 +137,7 @@ export const PaymentOCRModal: React.FC<PaymentOCRModalProps> = ({
             </span>
             <div className="w-52 h-52 sm:w-60 sm:h-60 mx-auto bg-white p-3 rounded-2xl shadow-inner flex items-center justify-center overflow-hidden border-2 border-amber-500/30">
               <img
-                src={activeQrUrl || OFFICIAL_QUINTO_PAYMENT_QR_BASE64}
+                src={getDirectImageUrl(activeQrUrl) || OFFICIAL_QUINTO_PAYMENT_QR_BASE64}
                 onError={(e) => {
                   e.currentTarget.src = OFFICIAL_QUINTO_PAYMENT_QR_BASE64;
                 }}

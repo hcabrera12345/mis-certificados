@@ -1,4 +1,17 @@
 'use client';
+export function getDirectImageUrl(url: string): string {
+  if (!url) return '';
+  let cleanUrl = url.trim();
+  if (cleanUrl.includes('imgur.com')) {
+    const parts = cleanUrl.split('/');
+    const lastPart = parts[parts.length - 1].split('?')[0].split('#')[0];
+    if (lastPart && lastPart !== 'a') {
+      return `https://i.imgur.com/${lastPart}.png`;
+    }
+  }
+  return cleanUrl;
+}
+
 import { OFFICIAL_QUINTO_PAYMENT_QR_BASE64 } from '@/lib/mockData';
 
 import React, { useState } from 'react';
@@ -72,7 +85,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   };
 
             const handleSaveQRUrl = async (urlToSave?: string) => {
-    const finalUrl = (urlToSave || qrUrlInput).trim();
+    const rawUrl = (urlToSave || qrUrlInput).trim();
+    const finalUrl = getDirectImageUrl(rawUrl);
     if (!finalUrl) {
       alert('Por favor ingresa una URL de imagen válida.');
       return;
