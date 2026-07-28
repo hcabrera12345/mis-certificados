@@ -242,6 +242,7 @@ export default function Home() {
             paymentQrUrl={systemSettings.payment_qr_url}
             onAddReceipt={handleCreateReceipt}
             isAuthenticated={!!userProfile}
+            userName={userProfile?.name}
             onOpenAuth={() => setShowAuthModal(true)}
           />
         )}

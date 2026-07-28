@@ -7,6 +7,7 @@ import { Course, PaymentReceipt } from '@/types';
 interface PaymentOCRModalProps {
   course: Course;
   paymentQrUrl: string;
+  userName?: string;
   onClose: () => void;
   onSubmitReceipt: (receipt: PaymentReceipt) => void;
 }
@@ -14,6 +15,7 @@ interface PaymentOCRModalProps {
 export const PaymentOCRModal: React.FC<PaymentOCRModalProps> = ({
   course,
   paymentQrUrl,
+  userName,
   onClose,
   onSubmitReceipt
 }) => {
