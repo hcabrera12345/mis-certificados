@@ -166,32 +166,23 @@ export async function saveCertificateToDB(cert: Certificate): Promise<Certificat
 // ---------------------------------------------------------------------------
 export async function getSystemSettingsFromDB(): Promise<{ payment_qr_url?: string } | null> {
   try {
-    // A. Query system_settings table
-    const { data: sData } = await supabase
-      .from('system_settings')
-      .select('*')
-      .eq('id', 'default_settings')
-      .maybeSingle();
-
-    if (sData && sData.payment_qr_url && sData.payment_qr_url.length > 20) {
-      return { payment_qr_url: sData.payment_qr_url };
-    }
-
-    // B. Query courses table system row
-    const { data: cData } = await supabase
+    const SYSTEM_UUID = '00000000-0000-0000-0000-000000000099';
+    const { data: cData, error } = await supabase
       .from('courses')
       .select('description')
-      .eq('id', 'system-setting-qr')
+      .eq('id', SYSTEM_UUID)
       .maybeSingle();
 
-    if (cData && cData.description && cData.description.length > 20) {
-      return { payment_qr_url: cData.description };
+    if (!error && cData && cData.description && cData.description.length > 10) {
+      // Ignore 1x1 test pixels if present
+      if (!cData.description.includes('iVBORw0KGgoAAAANSUhEUgAAAAEAAAAB')) {
+        return { payment_qr_url: cData.description };
+      }
     }
-
-    return null;
+    return { payment_qr_url: '/qr_oficial_banco_ganadero.png' };
   } catch (err) {
     console.error('Exception fetching public QR from DB:', err);
-    return null;
+    return { payment_qr_url: '/qr_oficial_banco_ganadero.png' };
   }
 }
 
