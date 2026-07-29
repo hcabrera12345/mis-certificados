@@ -198,30 +198,26 @@ export async function getSystemSettingsFromDB(): Promise<{ payment_qr_url?: stri
 export async function saveSystemSettingsToDB(settings: { payment_qr_url?: string }): Promise<void> {
   if (!settings.payment_qr_url) return;
   const qrData = settings.payment_qr_url;
+  const SYSTEM_UUID = '00000000-0000-0000-0000-000000000099';
 
-  // 1. Save to system_settings table
   try {
-    await supabase.from('system_settings').upsert({
-      id: 'default_settings',
-      payment_qr_url: qrData,
-      updated_at: new Date().toISOString()
-    });
-  } catch (e) {}
-
-  // 2. Save to courses table system row
-  try {
-    await supabase.from('courses').upsert({
-      id: 'system-setting-qr',
+    const { error } = await supabase.from('courses').upsert({
+      id: SYSTEM_UUID,
       title: 'QUINTO_SYSTEM_SETTING_PAYMENT_QR',
-      category: 'SYSTEM',
+      description: qrData,
+      instructor_name: 'Directorio Quinto',
       price_usd: 0,
       academic_hours: 0,
-      instructor_name: 'SYSTEM',
-      image_url: 'https://quintoejeingenieria.com/Quinto_Eje_logo_ALTA_CALIDAD.png',
-      description: qrData,
+      category: 'SYSTEM',
+      image_url: '/quinto_official_payment_qr.png',
       is_active: false
     });
+    if (error) {
+      console.error('Error saving QR row in Supabase DB:', error);
+    } else {
+      console.log('Successfully saved QR to Supabase DB system row!');
+    }
   } catch (e) {
-    console.error('Error saving QR to DB system row:', e);
+    console.error('Exception saving QR to DB:', e);
   }
 }
