@@ -228,7 +228,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             }`}
           >
             <QrCode className="w-4 h-4" />
-            Subir QR Oficial
+            Subir QR & Guía Práctica
           </button>
 
           </div>
@@ -559,6 +559,80 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                         PDF Oficial Configurado
                       </span>
                     </div>
+
+                {/* Card 3: Official Practical Guide (.PDF) Uploader & Direct Link */}
+                <div className="bg-slate-900/90 border-2 border-emerald-500/40 rounded-3xl p-6 sm:p-8 space-y-6 shadow-2xl flex flex-col justify-between lg:col-span-2">
+                  <div className="space-y-4">
+                    <div className="flex items-center gap-4 border-b border-slate-800 pb-4">
+                      <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400">
+                        <BookOpen className="w-6 h-6" />
+                      </div>
+                      <div>
+                        <h3 className="text-lg font-black text-white">Cargar Guía Práctica Oficial (.PDF)</h3>
+                        <p className="text-xs text-slate-400 mt-0.5">
+                          Sube o configura la Guía Práctica en PDF que se liberará al estudiante tras aprobar su comprobante de pago.
+                        </p>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {/* Option 1: Direct Link */}
+                      <div className="bg-slate-950/80 p-5 rounded-2xl border border-slate-800 space-y-3">
+                        <label className="block text-xs font-black text-emerald-400 uppercase tracking-wider">
+                          Opción 1: Pegar Enlace / URL Pública de la Guía (.PDF):
+                        </label>
+                        <div className="flex flex-col sm:flex-row gap-2.5">
+                          <input
+                            type="url"
+                            value={guideUrlInput}
+                            onChange={(e) => setGuideUrlInput(e.target.value)}
+                            placeholder="https://.../guia_practica.pdf"
+                            className="flex-1 bg-slate-900 border border-slate-700 rounded-xl px-4 py-2.5 text-xs text-white font-mono focus:outline-none focus:border-emerald-500 transition-all"
+                          />
+                          <button
+                            type="button"
+                            onClick={() => handleSaveGuideUrl()}
+                            className="px-5 py-2.5 bg-emerald-500 hover:bg-emerald-400 text-slate-950 font-black rounded-xl text-xs shadow-md transition-all cursor-pointer whitespace-nowrap"
+                          >
+                            Guardar URL
+                          </button>
+                        </div>
+                        <p className="text-[10px] text-slate-500">Pega un enlace público directo de Google Drive, Dropbox u otro servidor.</p>
+                      </div>
+
+                      {/* Option 2: Local PDF Upload */}
+                      <div className="bg-slate-950/80 p-5 rounded-2xl border border-slate-800 space-y-3">
+                        <label className="block text-xs font-black text-slate-300 uppercase tracking-wider">
+                          Opción 2: Subir Archivo PDF desde tu Computadora:
+                        </label>
+                        <input
+                          type="file"
+                          accept=".pdf,application/pdf"
+                          onChange={handleGuidePDFUpload}
+                          className="hidden"
+                          id="admin-guide-pdf-input"
+                        />
+                        <label
+                          htmlFor="admin-guide-pdf-input"
+                          className="w-full py-3 bg-slate-800 hover:bg-slate-700 text-slate-200 font-bold rounded-xl text-xs flex items-center justify-center gap-2 cursor-pointer border border-slate-700 transition-all shadow-sm"
+                        >
+                          <Upload className="w-4 h-4 text-emerald-400" />
+                          <span>Seleccionar y Cargar Guía Práctica (.PDF)</span>
+                        </label>
+                        <p className="text-[10px] text-slate-500">Carga directa del documento de estudio oficial en PDF.</p>
+                      </div>
+                    </div>
+
+                    <div className="bg-slate-950/60 p-4 rounded-xl border border-slate-800 flex items-center justify-between text-xs">
+                      <span className="text-slate-400">Estado de Guía Práctica Actual:</span>
+                      <span className="font-bold text-emerald-400 flex items-center gap-1.5">
+                        <CheckCircle2 className="w-4 h-4" />
+                        Guía Práctica Lista en Servidor & Sincronizada
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
                   </div>
 
                   <div className="text-[11px] text-slate-500 border-t border-slate-800 pt-3">
