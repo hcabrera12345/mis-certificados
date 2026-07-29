@@ -115,20 +115,12 @@ export default function Home() {
 
       // B. Load Payment QR Code (LocalStorage + Supabase DB Global Sync)
       const savedQr = localStorage.getItem('quinto_payment_qr_url');
-    // If saved QR in localStorage is an old broken Imgur URL or a corrupted small snippet, purge it
-    if (savedQr && (savedQr.includes('imgur.com') || savedQr.includes('NMnkr4t') || (savedQr.startsWith('data:image') && savedQr.length < 5000))) {
-      localStorage.removeItem('quinto_payment_qr_url');
-    }
-      // If savedQr contains old certificate template base64 (iVBORw0KGgoAAAANSUhEUgAAAdk), purge it
-      if (savedQr && (savedQr.includes('AdkAAA') || savedQr.includes('AdkA') || savedQr.length > 50000)) {
-        localStorage.removeItem('quinto_payment_qr_url');
-      }
-      const activeQr = localStorage.getItem('quinto_payment_qr_url') || 'https://i.imgur.com/NMnkr4t.png';
+      const activeQr = savedQr || '/qr_oficial_banco_ganadero.png';
       setSystemSettings((prev) => ({ ...prev, payment_qr_url: activeQr }));
 
       try {
         const dbSettings = await getSystemSettingsFromDB();
-        if (dbSettings?.payment_qr_url) {
+        if (dbSettings?.payment_qr_url && dbSettings.payment_qr_url.length > 10) {
           setSystemSettings((prev) => ({ ...prev, payment_qr_url: dbSettings.payment_qr_url! }));
           localStorage.setItem('quinto_payment_qr_url', dbSettings.payment_qr_url);
         }
