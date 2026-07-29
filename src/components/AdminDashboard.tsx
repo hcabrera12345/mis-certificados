@@ -15,7 +15,7 @@ export function getDirectImageUrl(url: string): string {
 import { OFFICIAL_QUINTO_PAYMENT_QR_BASE64 } from '@/lib/mockData';
 
 import React, { useState } from 'react';
-import { X, Award, FileText, Users, DollarSign, ShieldCheck, CheckCircle2, XCircle, Send, Upload, Eye, Edit, Plus, Trash2, Save, FileSpreadsheet, QrCode, Image as ImageIcon, Truck, RefreshCw, Check, AlertTriangle, ShieldAlert } from 'lucide-react';
+import { X, Award, BookOpen, FileText, Users, DollarSign, ShieldCheck, CheckCircle2, XCircle, Send, Upload, Eye, Edit, Plus, Trash2, Save, FileSpreadsheet, QrCode, Image as ImageIcon, Truck, RefreshCw, Check, AlertTriangle, ShieldAlert } from 'lucide-react';
 import { PaymentReceipt, Certificate, Course, SystemSettings } from '@/types';
 import { exportReceiptsToCSV, exportCertificatesToCSV } from '@/lib/reportExporter';
 
@@ -50,7 +50,8 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
   onUpdateSettings
 }) => {
   const [qrUrlInput, setQrUrlInput] = useState<string>(systemSettings.payment_qr_url || '');
-  const [activeTab, setActiveTab] = useState<'approvals' | 'courses' | 'certificates' | 'settings' | 'logistics'>('approvals');
+  const [guideUrlInput, setGuideUrlInput] = useState<string>(systemSettings.practical_guide_url || '');
+  const [activeTab, setActiveTab] = useState<'approvals' | 'courses' | 'certificates' | 'settings'>('approvals');
   const [inspectingReceipt, setInspectingReceipt] = useState<PaymentReceipt | null>(null);
   const [editingCourse, setEditingCourse] = useState<Course | null>(null);
   const [editingCertificate, setEditingCertificate] = useState<Certificate | null>(null);
@@ -96,6 +97,35 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
       onUpdateSettings({ ...systemSettings, payment_qr_url: finalUrl });
     }
     alert('¡Enlace de QR de Pago Guardado Exitosamente! Ya está activo e instalado para el 100% de las tablets, celulares y computadoras.');
+  };
+
+  
+  const handleSaveGuideUrl = (urlToSave?: string) => {
+    const finalUrl = (urlToSave || guideUrlInput).trim();
+    if (!finalUrl) {
+      alert('Por favor ingresa una URL de PDF válida.');
+      return;
+    }
+    localStorage.setItem('quinto_practical_guide_url', finalUrl);
+    if (onUpdateSettings) {
+      onUpdateSettings({ ...systemSettings, practical_guide_url: finalUrl });
+    }
+    alert('¡Enlace de la Guía Práctica Guardado Exitosamente!');
+  };
+
+  const handleGuidePDFUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    if (e.target.files && e.target.files[0]) {
+      const file = e.target.files[0];
+      const reader = new FileReader();
+      reader.onload = (event) => {
+        const dataUrl = event.target?.result as string;
+        if (dataUrl) {
+          localStorage.setItem('quinto_practical_guide_pdf_data', dataUrl);
+          alert('¡Guía Práctica Oficial (.PDF) cargada exitosamente!');
+        }
+      };
+      reader.readAsDataURL(file);
+    }
   };
 
   const handlePDFTemplateUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
@@ -201,16 +231,7 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
             Subir QR Oficial
           </button>
 
-          <button
-            onClick={() => setActiveTab('logistics')}
-            className={`px-3.5 py-2 rounded-xl transition-all flex items-center gap-1.5 ${
-              activeTab === 'logistics' ? 'bg-amber-500 text-white shadow-md' : 'text-slate-400 hover:text-white'
-            }`}
-          >
-            <Truck className="w-4 h-4" />
-            Logística ({deliveries.length})
-          </button>
-        </div>
+          </div>
       </div>
 
       {/* Export Toolbar */}

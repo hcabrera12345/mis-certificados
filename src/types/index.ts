@@ -50,6 +50,7 @@ export interface Certificate {
   qr_code_url: string;
   issued_at: string;
   background_template_url?: string;
+  practical_guide_url?: string;
 }
 
 export interface CertificateTemplate {
@@ -68,4 +69,5 @@ export interface CertificateTemplate {
 export interface SystemSettings {
   payment_qr_url: string;
   payment_instructions: string;
+  practical_guide_url?: string;
 }
