@@ -6,9 +6,11 @@ import { Course, PaymentReceipt } from '@/types';
 import { OFFICIAL_QUINTO_PAYMENT_QR_BASE64 } from '@/lib/mockData';
 
 export function getDirectImageUrl(url: string): string {
-  if (!url) return '';
+  if (!url) return OFFICIAL_QUINTO_PAYMENT_QR_BASE64;
   let cleanUrl = url.trim();
-  // Convert Imgur album/page URLs (e.g. https://imgur.com/a/NMnkr4t or https://imgur.com/NMnkr4t) to direct image URLs (https://i.imgur.com/NMnkr4t.png)
+  if (cleanUrl.includes('NMnkr4t') || cleanUrl.includes('imgur.com/a/NMnkr4t')) {
+    return OFFICIAL_QUINTO_PAYMENT_QR_BASE64;
+  }
   if (cleanUrl.includes('imgur.com')) {
     const parts = cleanUrl.split('/');
     const lastPart = parts[parts.length - 1].split('?')[0].split('#')[0];
