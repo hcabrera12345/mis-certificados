@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState } from 'react';
-import { X, Upload, QrCode, CheckCircle2, ShieldCheck, FileText, Send, DollarSign, Image } from 'lucide-react';
+import { X, Upload, Download, QrCode, CheckCircle2, ShieldCheck, FileText, Send, DollarSign, Image } from 'lucide-react';
 import { Course, PaymentReceipt } from '@/types';
 import { OFFICIAL_QUINTO_PAYMENT_QR_BASE64 } from '@/lib/mockData';
 
@@ -45,6 +45,21 @@ export const PaymentOCRModal: React.FC<PaymentOCRModalProps> = ({
       setFile(selectedFile);
       const url = URL.createObjectURL(selectedFile);
       setPreviewUrl(url);
+    }
+  };
+
+  
+  const handleDownloadQrCode = () => {
+    try {
+      const currentQrSrc = getDirectImageUrl(activeQrUrl) || OFFICIAL_QUINTO_PAYMENT_QR_BASE64;
+      const link = document.createElement('a');
+      link.href = currentQrSrc;
+      link.download = 'QR_Oficial_Pago_Banco_Ganadero_Quinto.png';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+    } catch (e) {
+      console.error('Error al descargar imagen de QR:', e);
     }
   };
 
@@ -140,7 +155,20 @@ export const PaymentOCRModal: React.FC<PaymentOCRModalProps> = ({
                 className="w-full h-full object-contain select-none"
               />
             </div>
-            <p className="text-xs text-slate-400 font-medium">Escanea este código desde tu app de banca móvil o Yape/Plin</p>
+            
+            <div className="pt-1 flex justify-center">
+              <button
+                type="button"
+                onClick={handleDownloadQrCode}
+                className="px-4 py-2.5 bg-amber-500/10 hover:bg-amber-500/20 border border-amber-500/40 text-amber-300 font-bold text-xs rounded-xl flex items-center gap-2 shadow-md transition-all cursor-pointer"
+              >
+                <Download className="w-4 h-4 text-amber-400" />
+                <span>Descargar Imagen de QR a tu Celular / Galería</span>
+              </button>
+            </div>
+            <p className="text-[11px] text-slate-400 font-medium">
+              Escanea este código o descárgalo a tu galería para cargarlo desde tu app de banca móvil (GanaMóvil / Simple / Yape).
+            </p>
           </div>
 
           {/* Enrollment Form */}

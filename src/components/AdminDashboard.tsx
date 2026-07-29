@@ -507,6 +507,23 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                       />
                     </label>
                   </div>
+
+                    <div className="pt-2">
+                      <button
+                        type="button"
+                        onClick={() => {
+                          localStorage.removeItem('quinto_payment_qr_url');
+                          if (onUpdateSettings) {
+                            onUpdateSettings({ ...systemSettings, payment_qr_url: '/qr_oficial_banco_ganadero.png' });
+                          }
+                          alert('¡QR Restablecido al Oficial del Banco Ganadero S.A.!');
+                        }}
+                        className="w-full py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-300 font-bold text-xs rounded-xl border border-slate-700 transition-all cursor-pointer flex items-center justify-center gap-2"
+                      >
+                        <QrCode className="w-3.5 h-3.5 text-amber-400" />
+                        <span>Restablecer a QR Oficial del Banco Ganadero S.A.</span>
+                      </button>
+                    </div>
                 </div>
 
                 {/* Right Card: Official PDF Template Background Uploader */}
