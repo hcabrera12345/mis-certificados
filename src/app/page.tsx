@@ -115,7 +115,8 @@ export default function Home() {
 
       // B. Load Payment QR Code (LocalStorage + Supabase DB Global Sync)
       const savedQr = localStorage.getItem('quinto_payment_qr_url');
-    if (savedQr && (savedQr.includes('NMnkr4t') || savedQr.includes('imgur.com'))) {
+    // If saved QR in localStorage is an old broken Imgur URL or a corrupted small snippet, purge it
+    if (savedQr && (savedQr.includes('imgur.com') || savedQr.includes('NMnkr4t') || (savedQr.startsWith('data:image') && savedQr.length < 5000))) {
       localStorage.removeItem('quinto_payment_qr_url');
     }
       // If savedQr contains old certificate template base64 (iVBORw0KGgoAAAANSUhEUgAAAdk), purge it
