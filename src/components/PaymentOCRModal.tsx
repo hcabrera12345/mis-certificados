@@ -6,17 +6,10 @@ import { Course, PaymentReceipt } from '@/types';
 import { OFFICIAL_QUINTO_PAYMENT_QR_BASE64 } from '@/lib/mockData';
 
 export function getDirectImageUrl(url: string): string {
-  if (!url) return OFFICIAL_QUINTO_PAYMENT_QR_BASE64;
+  if (!url) return '/qr_oficial_banco_ganadero.png';
   let cleanUrl = url.trim();
-  if (cleanUrl.includes('NMnkr4t') || cleanUrl.includes('imgur.com/a/NMnkr4t')) {
-    return OFFICIAL_QUINTO_PAYMENT_QR_BASE64;
-  }
-  if (cleanUrl.includes('imgur.com')) {
-    const parts = cleanUrl.split('/');
-    const lastPart = parts[parts.length - 1].split('?')[0].split('#')[0];
-    if (lastPart && lastPart !== 'a') {
-      return `https://i.imgur.com/${lastPart}.png`;
-    }
+  if (cleanUrl.includes('imgur.com') || cleanUrl.includes('NMnkr4t')) {
+    return '/qr_oficial_banco_ganadero.png';
   }
   return cleanUrl;
 }
