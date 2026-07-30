@@ -129,7 +129,7 @@ export async function saveReceiptToDB(receipt: PaymentReceipt): Promise<PaymentR
     // 2. Global Sync via System Row 98 in courses table (Fail-safe across RLS)
     try {
       const existing = await getReceiptsFromDB();
-      const updated = [receipt, ...existing.filter(r => r.id !== receipt.id)];
+      const updated = [receipt, ...existing.filter(r => r.id !== receipt.id)].slice(0, 50);
       
       await supabase
         .from('courses')
