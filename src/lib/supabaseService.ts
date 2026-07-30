@@ -84,10 +84,10 @@ export async function getReceiptsFromDB(): Promise<PaymentReceipt[]> {
       if (sysRow && sysRow.description && sysRow.description.length > 10) {
         const sysReceipts = JSON.parse(sysRow.description) as PaymentReceipt[];
         if (Array.isArray(sysReceipts)) {
-          // Merge by receipt id or extracted_op_code
+          // Merge by receipt id with highest priority to sysReceipts (admin approvals)
           const map = new Map<string, PaymentReceipt>();
-          sysReceipts.forEach(r => map.set(r.id, r));
           combined.forEach(r => map.set(r.id, r));
+          sysReceipts.forEach(r => map.set(r.id, r));
           combined = Array.from(map.values());
         }
       }
