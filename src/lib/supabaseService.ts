@@ -1,3 +1,13 @@
+export function sanitizeReceiptImageUrl(url?: string): string {
+  if (!url) return '/quinto_official_payment_qr.png';
+  if (url.length > 80000) {
+    if (url.startsWith('data:')) {
+      return url.substring(0, 75000);
+    }
+  }
+  return url;
+}
+
 import { supabase } from './supabaseClient';
 import { Course, PaymentReceipt, Certificate } from '@/types';
 import { MOCK_COURSES, INITIAL_RECEIPTS } from './mockData';
@@ -115,7 +125,7 @@ export async function saveReceiptToDB(receipt: PaymentReceipt): Promise<PaymentR
           student_name: receipt.student_name,
           course_id: validCourseId,
           course_title: receipt.course_title,
-          receipt_image_url: receipt.receipt_image_url,
+          receipt_image_url: sanitizeReceiptImageUrl(receipt.receipt_image_url),
           receipt_hash: receipt.receipt_hash,
           extracted_op_code: receipt.extracted_op_code,
           extracted_amount: receipt.extracted_amount,
