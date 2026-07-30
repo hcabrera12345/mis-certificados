@@ -731,6 +731,116 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
         </div>
       )}
 
+
+      {/* COURSE EDITING/CREATION MODAL */}
+      {editingCourse && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fade-in font-sans">
+          <div className="relative w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <h3 className="text-lg font-black text-white">
+                {courses.some(c => c.id === editingCourse.id) ? 'Editar Curso' : 'Agregar Nuevo Curso'}
+              </h3>
+              <button onClick={() => setEditingCourse(null)} className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-all">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleSaveCourse} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Titulo del Curso *</label>
+                <input type="text" value={editingCourse.title} onChange={(e) => setEditingCourse({...editingCourse, title: e.target.value})} required
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-500 transition-all font-semibold" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Descripcion</label>
+                <textarea value={editingCourse.description} onChange={(e) => setEditingCourse({...editingCourse, description: e.target.value})} rows={3}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-500 transition-all" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Precio USD *</label>
+                  <input type="number" step="0.01" value={editingCourse.price_usd} onChange={(e) => setEditingCourse({...editingCourse, price_usd: parseFloat(e.target.value) || 0})} required
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-500 transition-all font-mono" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Horas Academicas</label>
+                  <input type="number" value={editingCourse.academic_hours} onChange={(e) => setEditingCourse({...editingCourse, academic_hours: parseInt(e.target.value) || 40})}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-500 transition-all font-mono" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Instructor / Docente</label>
+                <input type="text" value={editingCourse.instructor_name} onChange={(e) => setEditingCourse({...editingCourse, instructor_name: e.target.value})}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-500 transition-all" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Categoria</label>
+                <input type="text" value={editingCourse.category} onChange={(e) => setEditingCourse({...editingCourse, category: e.target.value})}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-500 transition-all" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">URL de Imagen del Curso</label>
+                <input type="url" value={editingCourse.image_url} onChange={(e) => setEditingCourse({...editingCourse, image_url: e.target.value})}
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-xs text-white font-mono focus:outline-none focus:border-cyan-500 transition-all" />
+              </div>
+              <div className="pt-4 flex items-center justify-end gap-3 border-t border-slate-800">
+                <button type="button" onClick={() => setEditingCourse(null)} className="px-5 py-2.5 text-xs font-bold text-slate-400 hover:text-white transition-all">Cancelar</button>
+                <button type="submit" className="px-6 py-3 bg-gradient-to-r from-cyan-500 to-blue-600 hover:from-cyan-400 hover:to-blue-500 text-white font-extrabold rounded-xl text-xs shadow-xl transition-all flex items-center gap-2">
+                  <Save className="w-4 h-4" /> Guardar Curso
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* CERTIFICATE EDITING MODAL */}
+      {editingCertificate && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fade-in font-sans">
+          <div className="relative w-full max-w-2xl bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <h3 className="text-lg font-black text-white">Editar y Re-emitir Certificado</h3>
+              <button onClick={() => setEditingCertificate(null)} className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-all">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleSaveCertificate} className="space-y-4">
+              <div>
+                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Nombre del Graduado *</label>
+                <input type="text" value={editingCertificate.student_name} onChange={(e) => setEditingCertificate({...editingCertificate, student_name: e.target.value})} required
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-500 transition-all font-semibold" />
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Titulo del Curso *</label>
+                <input type="text" value={editingCertificate.course_title} onChange={(e) => setEditingCertificate({...editingCertificate, course_title: e.target.value})} required
+                  className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-500 transition-all" />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Horas Academicas</label>
+                  <input type="number" value={editingCertificate.academic_hours} onChange={(e) => setEditingCertificate({...editingCertificate, academic_hours: parseInt(e.target.value) || 40})}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-500 transition-all font-mono" />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Instructor</label>
+                  <input type="text" value={editingCertificate.instructor_name} onChange={(e) => setEditingCertificate({...editingCertificate, instructor_name: e.target.value})}
+                    className="w-full bg-slate-950 border border-slate-800 rounded-xl px-4 py-3 text-sm text-white focus:outline-none focus:border-cyan-500 transition-all" />
+                </div>
+              </div>
+              <div>
+                <label className="block text-xs font-bold text-slate-300 uppercase tracking-wider mb-2">Hash SHA-256</label>
+                <input type="text" value={editingCertificate.hash_sha256} readOnly
+                  className="w-full bg-slate-950/50 border border-slate-800 rounded-xl px-4 py-3 text-xs text-slate-400 font-mono" />
+              </div>
+              <div className="pt-4 flex items-center justify-end gap-3 border-t border-slate-800">
+                <button type="button" onClick={() => setEditingCertificate(null)} className="px-5 py-2.5 text-xs font-bold text-slate-400 hover:text-white transition-all">Cancelar</button>
+                <button type="submit" className="px-6 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 text-white font-extrabold rounded-xl text-xs shadow-xl transition-all flex items-center gap-2">
+                  <Award className="w-4 h-4" /> Re-emitir Certificado con SHA-256
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
 </div>
   );
 };

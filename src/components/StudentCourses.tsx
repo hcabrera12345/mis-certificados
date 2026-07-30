@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState } from 'react';
 import { BookOpen, Award, CheckCircle2, QrCode, ArrowRight } from 'lucide-react';
@@ -12,6 +12,7 @@ interface StudentCoursesProps {
   isAuthenticated: boolean;
   userName?: string;
   studentEmail?: string;
+  studentId?: string;
   onOpenAuth: () => void;
 }
 
@@ -22,6 +23,7 @@ export const StudentCourses: React.FC<StudentCoursesProps> = ({
   isAuthenticated,
   userName,
   studentEmail,
+  studentId,
   onOpenAuth
 }) => {
   const [selectedCourseForPayment, setSelectedCourseForPayment] = useState<Course | null>(null);
@@ -40,13 +42,13 @@ export const StudentCourses: React.FC<StudentCoursesProps> = ({
       <div className="bg-slate-900/60 border border-slate-800 rounded-3xl p-6 sm:p-8 backdrop-blur-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6">
         <div>
           <span className="px-3 py-1 bg-cyan-500/10 text-cyan-400 border border-cyan-500/20 rounded-full text-xs font-mono font-bold uppercase tracking-wider inline-block mb-3">
-            Catálogo Oficial de Capacitaciones
+            Cat&aacute;logo Oficial de Capacitaciones
           </span>
           <h1 className="text-2xl sm:text-3xl font-black text-white tracking-tight">
-            Cursos Disponibles & Certificación Digital
+            Cursos Disponibles &amp; Certificaci&oacute;n Digital
           </h1>
           <p className="text-slate-400 text-xs sm:text-sm mt-1 max-w-2xl">
-            Inscríbete en nuestros programas de alta especialización en Inteligencia Artificial y obtén tu diploma oficial verificado con código QR y Hash SHA-256.
+            Inscr&iacute;bete en nuestros programas de alta especializaci&oacute;n en Inteligencia Artificial y obt&eacute;n tu diploma oficial verificado con c&oacute;digo QR y Hash SHA-256.
           </p>
         </div>
       </div>
@@ -107,6 +109,7 @@ export const StudentCourses: React.FC<StudentCoursesProps> = ({
           course={selectedCourseForPayment}
           paymentQrUrl={paymentQrUrl}
           studentEmail={studentEmail}
+          studentId={studentId}
           userName={userName}
           onClose={() => setSelectedCourseForPayment(null)}
           onSubmitReceipt={(receipt) => {

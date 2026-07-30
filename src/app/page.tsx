@@ -1,4 +1,4 @@
-'use client';
+﻿'use client';
 
 import React, { useState, useEffect } from 'react';
 import { Navbar } from '@/components/Navbar';
@@ -26,7 +26,7 @@ import {
 export default function Home() {
   const [currentTab, setCurrentTab] = useState<string>('courses');
   const [userRole, setUserRole] = useState<UserRole>('student');
-  const [userProfile, setUserProfile] = useState<{ email: string; name: string; role: UserRole } | null>(null);
+  const [userProfile, setUserProfile] = useState<{ email: string; name: string; role: UserRole; id?: string } | null>(null);
   const [showAuthModal, setShowAuthModal] = useState<boolean>(false);
   const [selectedHashForVerification, setSelectedHashForVerification] = useState<string | null>(null);
 
@@ -40,7 +40,6 @@ export default function Home() {
   // 1. AUTHENTICATION MOTOR: Google OAuth Hash Parser & Supabase Session Listener
   // ---------------------------------------------------------------------------
   useEffect(() => {
-    // A. Parse Direct Hash Token from Google OAuth redirect (#access_token=...)
     const checkDirectHashToken = async () => {
       if (typeof window !== 'undefined' && window.location.hash.includes('access_token')) {
         const hashParams = new URLSearchParams(window.location.hash.substring(1));
@@ -59,10 +58,10 @@ export default function Home() {
               setUserProfile({
                 email: u.email || 'usuario@quinto.app',
                 name: u.user_metadata?.full_name || u.email?.split('@')[0] || 'Usuario Quinto',
-                role: u.email === 'admin@quinto.app' ? 'admin' : 'student'
+                role: u.email === 'admin@quinto.app' ? 'admin' : 'student',
+                id: u.id
               });
               setUserRole(u.email === 'admin@quinto.app' ? 'admin' : 'student');
-              // Clear URL hash cleanly
               window.history.replaceState(null, '', window.location.pathname);
             }
           } catch (e) {
@@ -74,18 +73,17 @@ export default function Home() {
 
     checkDirectHashToken();
 
-    // B. Supabase Session Listener
     const { data: authListener } = supabase.auth.onAuthStateChange(async (event, session) => {
       if (session?.user) {
         const u = session.user;
         setUserProfile({
           email: u.email || 'usuario@quinto.app',
           name: u.user_metadata?.full_name || u.email?.split('@')[0] || 'Usuario Quinto',
-          role: u.email === 'admin@quinto.app' ? 'admin' : 'student'
+          role: u.email === 'admin@quinto.app' ? 'admin' : 'student',
+          id: u.id
         });
         setUserRole(u.email === 'admin@quinto.app' ? 'admin' : 'student');
       } else {
-        // Keep profile if manually logged in via master admin key
         setUserProfile((prev) => (prev?.role === 'admin' ? prev : null));
       }
     });
@@ -100,7 +98,6 @@ export default function Home() {
   // ---------------------------------------------------------------------------
   useEffect(() => {
     async function loadData() {
-      // A. Load Courses from LocalStorage first
       const savedCourses = localStorage.getItem('quinto_courses_list');
       if (savedCourses) {
         try {
@@ -113,7 +110,6 @@ export default function Home() {
         }
       }
 
-      // B. Load Payment QR Code (LocalStorage + Supabase DB Global Sync)
       const savedQr = localStorage.getItem('quinto_payment_qr_url');
       const activeQr = savedQr || '/qr_oficial_banco_ganadero.png';
       setSystemSettings((prev) => ({ ...prev, payment_qr_url: activeQr }));
@@ -126,7 +122,6 @@ export default function Home() {
         }
       } catch (e) {}
 
-      // C. Sync DB Data
       try {
         const dbCourses = await getCoursesFromDB();
         if (dbCourses && dbCourses.length > 0 && !savedCourses) {
@@ -134,7 +129,6 @@ export default function Home() {
           localStorage.setItem('quinto_courses_list', JSON.stringify(dbCourses));
         }
 
-        // Load Receipts & Certificates from LocalStorage first for instant persistence
         const savedReceipts = localStorage.getItem('quinto_receipts_list');
         if (savedReceipts) {
           try {
@@ -151,12 +145,11 @@ export default function Home() {
           } catch(e) {}
         }
 
-        // Fetch DB data
         const dbReceipts = await getReceiptsFromDB();
-        if (dbReceipts && dbReceipts.length > 0 && !savedReceipts) setReceipts(dbReceipts);
+        if (dbReceipts && dbReceipts.length > 0) setReceipts(dbReceipts);
 
         const dbCerts = await getCertificatesFromDB();
-        if (dbCerts && dbCerts.length > 0 && !savedCerts) setCertificates(dbCerts);
+        if (dbCerts && dbCerts.length > 0) setCertificates(dbCerts);
       } catch (err) {
         console.error('Error syncing DB data:', err);
       }
@@ -166,7 +159,7 @@ export default function Home() {
   }, []);
 
   // ---------------------------------------------------------------------------
-  // 3. ADMIN COURSE MUTATION HANDLERS (Real-time Sync to User View)
+  // 3. ADMIN COURSE MUTATION HANDLERS
   // ---------------------------------------------------------------------------
   const handleUpdateCourses = async (updatedCourses: Course[]) => {
     setCourses(updatedCourses);
@@ -263,6 +256,11 @@ export default function Home() {
     setCurrentTab('courses');
   };
 
+  // Filter certificates for student view: only show their own
+  const userCertificates = userRole === 'admin'
+    ? certificates
+    : certificates.filter(c => !userProfile?.email || c.student_email === userProfile.email);
+
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col font-sans selection:bg-cyan-500 selection:text-white">
       <Navbar
@@ -276,7 +274,7 @@ export default function Home() {
           setUserRole('admin');
           setUserProfile({
             email: 'admin@quinto.app',
-            name: 'Hernán (Director Quinto)',
+            name: 'Hernan (Director Quinto)',
             role: 'admin'
           });
           setCurrentTab('admin');
@@ -293,13 +291,14 @@ export default function Home() {
             isAuthenticated={!!userProfile}
             userName={userProfile?.name}
             studentEmail={userProfile?.email}
+            studentId={userProfile?.id}
             onOpenAuth={() => setShowAuthModal(true)}
           />
         )}
 
         {currentTab === 'my-certificates' && userProfile && (
           <CertificateViewer
-            certificates={certificates}
+            certificates={userCertificates}
             onVerifyHash={handleVerifyHash}
             onAddDelivery={() => {}}
           />

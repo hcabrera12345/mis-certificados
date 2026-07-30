@@ -1,16 +1,45 @@
-export function sanitizeReceiptImageUrl(url?: string): string {
-  if (!url) return '/quinto_official_payment_qr.png';
-  if (url.length > 80000) {
-    if (url.startsWith('data:')) {
-      return url.substring(0, 75000);
-    }
-  }
-  return url;
-}
-
-import { supabase } from './supabaseClient';
+﻿import { supabase } from './supabaseClient';
 import { Course, PaymentReceipt, Certificate } from '@/types';
 import { MOCK_COURSES, INITIAL_RECEIPTS } from './mockData';
+
+// ---------------------------------------------------------------------------
+// SUPABASE STORAGE: Upload receipt files to 'receipts' bucket
+// ---------------------------------------------------------------------------
+export async function uploadReceiptFile(file: File, receiptId: string): Promise<string> {
+  const ext = file.name.split('.').pop()?.toLowerCase() || 'jpg';
+  const safeName = `${receiptId}_${Date.now()}.${ext}`;
+
+  try {
+    const { data, error } = await supabase.storage
+      .from('receipts')
+      .upload(safeName, file, {
+        cacheControl: '3600',
+        upsert: false,
+        contentType: file.type
+      });
+
+    if (!error && data?.path) {
+      const { data: urlData } = supabase.storage
+        .from('receipts')
+        .getPublicUrl(data.path);
+      if (urlData?.publicUrl) {
+        return urlData.publicUrl;
+      }
+    }
+  } catch (e) {
+    console.warn('Supabase Storage upload failed, falling back to base64:', e);
+  }
+
+  // Fallback: convert to base64 (always works, no bucket config needed)
+  return new Promise<string>((resolve) => {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      resolve((ev.target?.result as string) || '/quinto_official_payment_qr.png');
+    };
+    reader.onerror = () => resolve('/quinto_official_payment_qr.png');
+    reader.readAsDataURL(file);
+  });
+}
 
 // 1. Cursos
 export async function getCoursesFromDB(): Promise<Course[]> {
@@ -41,7 +70,7 @@ export async function saveCourseToDB(course: Course): Promise<boolean> {
         instructor_name: course.instructor_name || 'Directorio Quinto',
         price_usd: course.price_usd,
         image_url: course.image_url,
-        category: course.category || 'Capacitación',
+        category: course.category || 'Capacitacion',
         is_active: course.is_active !== false
       });
     if (error) throw error;
@@ -71,7 +100,6 @@ export async function getReceiptsFromDB(): Promise<PaymentReceipt[]> {
   try {
     let combined: PaymentReceipt[] = [];
 
-    // A. Fetch from payment_receipts table
     try {
       const { data: dbReceipts } = await supabase
         .from('payment_receipts')
@@ -83,7 +111,6 @@ export async function getReceiptsFromDB(): Promise<PaymentReceipt[]> {
       }
     } catch(e) {}
 
-    // B. Fetch from System Row 98 (Global System Sync)
     try {
       const { data: sysRow } = await supabase
         .from('courses')
@@ -94,7 +121,6 @@ export async function getReceiptsFromDB(): Promise<PaymentReceipt[]> {
       if (sysRow && sysRow.description && sysRow.description.length > 10) {
         const sysReceipts = JSON.parse(sysRow.description) as PaymentReceipt[];
         if (Array.isArray(sysReceipts)) {
-          // Merge by receipt id with highest priority to sysReceipts (admin approvals)
           const map = new Map<string, PaymentReceipt>();
           combined.forEach(r => map.set(r.id, r));
           sysReceipts.forEach(r => map.set(r.id, r));
@@ -116,7 +142,6 @@ export async function saveReceiptToDB(receipt: PaymentReceipt): Promise<PaymentR
     const validStudentId = isUuid(receipt.student_id) ? receipt.student_id : null;
     const validCourseId = isUuid(receipt.course_id) ? receipt.course_id : null;
 
-    // 1. Save to payment_receipts table
     try {
       await supabase
         .from('payment_receipts')
@@ -125,7 +150,7 @@ export async function saveReceiptToDB(receipt: PaymentReceipt): Promise<PaymentR
           student_name: receipt.student_name,
           course_id: validCourseId,
           course_title: receipt.course_title,
-          receipt_image_url: sanitizeReceiptImageUrl(receipt.receipt_image_url),
+          receipt_image_url: receipt.receipt_image_url,
           receipt_hash: receipt.receipt_hash,
           extracted_op_code: receipt.extracted_op_code,
           extracted_amount: receipt.extracted_amount,
@@ -136,7 +161,6 @@ export async function saveReceiptToDB(receipt: PaymentReceipt): Promise<PaymentR
         });
     } catch(e) {}
 
-    // 2. Global Sync via System Row 98 in courses table (Fail-safe across RLS)
     try {
       const existing = await getReceiptsFromDB();
       const updated = [receipt, ...existing.filter(r => r.id !== receipt.id)].slice(0, 50);
@@ -165,7 +189,6 @@ export async function saveReceiptToDB(receipt: PaymentReceipt): Promise<PaymentR
 
 export async function updateReceiptStatusInDB(receiptId: string, status: 'approved' | 'rejected'): Promise<boolean> {
   try {
-    // 1. Try update on payment_receipts table
     try {
       await supabase
         .from('payment_receipts')
@@ -173,7 +196,6 @@ export async function updateReceiptStatusInDB(receiptId: string, status: 'approv
         .eq('id', receiptId);
     } catch(e) {}
 
-    // 2. Global Sync via System Row 98 in courses table (Guarantees Admin Approval across RLS)
     try {
       const allReceipts = await getReceiptsFromDB();
       const updatedList = allReceipts.map(r => r.id === receiptId ? { ...r, admin_approval_status: status } : r);
@@ -242,10 +264,6 @@ export async function saveCertificateToDB(cert: Certificate): Promise<Certificat
 }
 
 // ---------------------------------------------------------------------------
-
-// ---------------------------------------------------------------------------
-
-// ---------------------------------------------------------------------------
 // UNRESTRICTED PUBLIC PAYMENT QR DB & STORAGE SYNC
 // ---------------------------------------------------------------------------
 export async function getSystemSettingsFromDB(): Promise<{ payment_qr_url?: string } | null> {
@@ -258,7 +276,6 @@ export async function getSystemSettingsFromDB(): Promise<{ payment_qr_url?: stri
       .maybeSingle();
 
     if (!error && cData && cData.description && cData.description.length > 10) {
-      // Ignore 1x1 test pixels if present
       if (!cData.description.includes('iVBORw0KGgoAAAANSUhEUgAAAAEAAAAB')) {
         return { payment_qr_url: cData.description };
       }
