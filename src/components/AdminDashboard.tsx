@@ -654,6 +654,83 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
                 </div>
               </div>
             )}
-    </div>
+    
+      {/* Receipt Inspection Side-by-Side Zoom Modal */}
+      {inspectingReceipt && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/85 backdrop-blur-md animate-fade-in font-sans">
+          <div className="relative w-full max-w-4xl bg-slate-900 border border-slate-800 rounded-3xl p-6 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto">
+            <div className="flex items-center justify-between border-b border-slate-800 pb-4">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-2xl bg-cyan-500/10 border border-cyan-500/30 flex items-center justify-center text-cyan-400">
+                  <ShieldCheck className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-black text-white">Inspección Detallada de Comprobante</h3>
+                  <p className="text-xs text-slate-400">Estudiante: {inspectingReceipt.student_name}</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setInspectingReceipt(null)}
+                className="p-2 text-slate-400 hover:text-white rounded-xl hover:bg-slate-800 transition-all"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
+                <span className="text-xs font-bold text-cyan-400 uppercase tracking-wider block">Foto del Comprobante Adjuntado:</span>
+                <div className="w-full h-80 bg-slate-900 rounded-xl overflow-hidden border border-slate-800 flex items-center justify-center p-2">
+                  {inspectingReceipt.receipt_image_url?.includes('application/pdf') ? (
+                    <iframe src={inspectingReceipt.receipt_image_url} className="w-full h-full rounded border-0" title="Comprobante PDF" />
+                  ) : (
+                    <img
+                      src={inspectingReceipt.receipt_image_url || 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=400'}
+                      alt="Comprobante Adjuntado"
+                      className="w-full h-full object-contain rounded select-none"
+                    />
+                  )}
+                </div>
+              </div>
+
+              <div className="bg-slate-950 p-5 rounded-2xl border border-slate-800 space-y-4 flex flex-col justify-between">
+                <div className="space-y-3">
+                  <span className="text-xs font-bold text-amber-400 uppercase tracking-wider block">Datos del Pago Registrado:</span>
+                  <div className="space-y-2 text-xs">
+                    <p className="text-slate-400">Nombre del Estudiante: <strong className="text-white block text-sm">{inspectingReceipt.student_name}</strong></p>
+                    <p className="text-slate-400">Capacitación: <strong className="text-cyan-300 block">{inspectingReceipt.course_title}</strong></p>
+                    <p className="text-slate-400">Código de Operación Bancaria: <span className="font-mono text-cyan-400 block font-bold">{inspectingReceipt.extracted_op_code}</span></p>
+                    <p className="text-slate-400">Monto Transferido: <span className="text-emerald-400 font-bold block text-base">${inspectingReceipt.extracted_amount} USD</span></p>
+                    <p className="text-slate-400">Sello Hash SHA-256: <span className="font-mono text-slate-400 block text-[10px] truncate">{inspectingReceipt.receipt_hash}</span></p>
+                  </div>
+                </div>
+
+                <div className="pt-4 border-t border-slate-800 flex items-center gap-3">
+                  <button
+                    onClick={() => {
+                      onApproveReceipt(inspectingReceipt);
+                      setInspectingReceipt(null);
+                    }}
+                    className="flex-1 py-3 bg-gradient-to-r from-emerald-500 to-teal-600 hover:from-emerald-400 text-white font-extrabold rounded-xl text-xs shadow-lg transition-all flex items-center justify-center gap-2"
+                  >
+                    <CheckCircle2 className="w-4 h-4" /> Aprobar y Liberar Certificado
+                  </button>
+                  <button
+                    onClick={() => {
+                      onRejectReceipt(inspectingReceipt.id);
+                      setInspectingReceipt(null);
+                    }}
+                    className="px-4 py-3 bg-red-950 hover:bg-red-900 border border-red-500/30 text-red-400 font-bold rounded-xl text-xs transition-all"
+                  >
+                    Rechazar
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
+
+</div>
   );
 };
