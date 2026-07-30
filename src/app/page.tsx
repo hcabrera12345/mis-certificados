@@ -208,6 +208,7 @@ export default function Home() {
       id: 'cert-' + Date.now(),
       enrollment_id: receipt.id,
       student_name: receipt.student_name,
+      student_email: receipt.student_email || '',
       course_title: receipt.course_title,
       academic_hours: 40,
       instructor_name: 'Directorio Quinto',
@@ -291,6 +292,7 @@ export default function Home() {
             onAddReceipt={handleCreateReceipt}
             isAuthenticated={!!userProfile}
             userName={userProfile?.name}
+            studentEmail={userProfile?.email}
             onOpenAuth={() => setShowAuthModal(true)}
           />
         )}

@@ -11,6 +11,7 @@ interface StudentCoursesProps {
   onAddReceipt: (receipt: PaymentReceipt) => void;
   isAuthenticated: boolean;
   userName?: string;
+  studentEmail?: string;
   onOpenAuth: () => void;
 }
 
@@ -20,6 +21,7 @@ export const StudentCourses: React.FC<StudentCoursesProps> = ({
   onAddReceipt,
   isAuthenticated,
   userName,
+  studentEmail,
   onOpenAuth
 }) => {
   const [selectedCourseForPayment, setSelectedCourseForPayment] = useState<Course | null>(null);
@@ -104,6 +106,7 @@ export const StudentCourses: React.FC<StudentCoursesProps> = ({
         <PaymentOCRModal
           course={selectedCourseForPayment}
           paymentQrUrl={paymentQrUrl}
+          studentEmail={studentEmail}
           userName={userName}
           onClose={() => setSelectedCourseForPayment(null)}
           onSubmitReceipt={(receipt) => {

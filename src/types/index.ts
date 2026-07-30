@@ -25,6 +25,7 @@ export interface Course {
 export interface PaymentReceipt {
   id: string;
   student_id: string;
+  student_email?: string;
   student_name: string;
   course_id: string;
   course_title: string;
@@ -43,6 +44,7 @@ export interface Certificate {
   id: string;
   enrollment_id: string;
   student_name: string;
+  student_email?: string;
   course_title: string;
   academic_hours: number;
   instructor_name: string;

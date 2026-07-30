@@ -18,6 +18,7 @@ export function getDirectImageUrl(url: string): string {
 interface PaymentOCRModalProps {
   course: Course;
   paymentQrUrl: string;
+  studentEmail?: string;
   userName?: string;
   onClose: () => void;
   onSubmitReceipt: (receipt: PaymentReceipt) => void;
@@ -25,6 +26,7 @@ interface PaymentOCRModalProps {
 
 export const PaymentOCRModal: React.FC<PaymentOCRModalProps> = ({
   course,
+  studentEmail,
   paymentQrUrl,
   userName,
   onClose,
@@ -64,6 +66,7 @@ export const PaymentOCRModal: React.FC<PaymentOCRModalProps> = ({
   };
 
   const handleSubmit = (e: React.FormEvent) => {
+    // Extract studentEmail prop if provided
     e.preventDefault();
     if (!studentName.trim()) {
       alert('Por favor ingresa tu nombre completo oficial para el certificado.');
@@ -83,6 +86,7 @@ export const PaymentOCRModal: React.FC<PaymentOCRModalProps> = ({
       id: 'rcpt-' + Date.now(),
       student_id: 'std-' + Math.random().toString(36).substring(2, 9),
       student_name: studentName,
+      student_email: studentEmail || '',
       course_id: course.id,
       course_title: course.title,
       receipt_image_url: previewUrl || '/quinto_official_payment_qr.png',
