@@ -47,25 +47,69 @@ export const PaymentOCRModal: React.FC<PaymentOCRModalProps> = ({
     if (e.target.files && e.target.files[0]) {
       const selectedFile = e.target.files[0];
 
-      // Security: validate file type and size
       const allowedTypes = ['image/png', 'image/jpeg', 'image/jpg', 'image/webp', 'application/pdf'];
       if (!allowedTypes.includes(selectedFile.type)) {
         alert('Tipo de archivo no permitido. Solo se aceptan: PNG, JPG, JPEG, WEBP o PDF.');
         return;
       }
-      if (selectedFile.size > 5 * 1024 * 1024) {
-        alert('El archivo es demasiado grande. Maximo 5MB.');
+      if (selectedFile.size > 10 * 1024 * 1024) {
+        alert('El archivo es demasiado grande. Maximo 10MB.');
         return;
       }
 
       setFile(selectedFile);
 
-      // Use FileReader for persistent base64 preview (NOT blob: URL)
-      const reader = new FileReader();
-      reader.onload = (ev) => {
-        setPreviewUrl(ev.target?.result as string);
-      };
-      reader.readAsDataURL(selectedFile);
+      if (selectedFile.type === 'application/pdf') {
+        const reader = new FileReader();
+        reader.onload = (ev) => {
+          setPreviewUrl(ev.target?.result as string);
+        };
+        reader.readAsDataURL(selectedFile);
+      } else {
+        // Compress image using HTML5 Canvas for super fast Base64 DataURL (~50KB)
+        const reader = new FileReader();
+        reader.onload = (event) => {
+          const rawUrl = event.target?.result as string;
+          if (rawUrl) {
+            const img = new window.Image();
+            img.onload = () => {
+              const canvas = document.createElement('canvas');
+              const MAX_WIDTH = 900;
+              const MAX_HEIGHT = 900;
+              let width = img.width;
+              let height = img.height;
+
+              if (width > height) {
+                if (width > MAX_WIDTH) {
+                  height = Math.round((height * MAX_WIDTH) / width);
+                  width = MAX_WIDTH;
+                }
+              } else {
+                if (height > MAX_HEIGHT) {
+                  width = Math.round((width * MAX_HEIGHT) / height);
+                  height = MAX_HEIGHT;
+                }
+              }
+
+              canvas.width = width;
+              canvas.height = height;
+              const ctx = canvas.getContext('2d');
+              if (ctx) {
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, width, height);
+                ctx.drawImage(img, 0, 0, width, height);
+                const compressed = canvas.toDataURL('image/jpeg', 0.80);
+                setPreviewUrl(compressed);
+              } else {
+                setPreviewUrl(rawUrl);
+              }
+            };
+            img.onerror = () => setPreviewUrl(rawUrl);
+            img.src = rawUrl;
+          }
+        };
+        reader.readAsDataURL(selectedFile);
+      }
     }
   };
 
@@ -100,7 +144,7 @@ export const PaymentOCRModal: React.FC<PaymentOCRModalProps> = ({
       const receiptId = 'rcpt-' + Date.now();
       let persistentUrl = previewUrl || '/quinto_official_payment_qr.png';
 
-      if (file) {
+      if (file && !previewUrl) {
         persistentUrl = await uploadReceiptFile(file, receiptId);
       }
 
@@ -126,7 +170,7 @@ export const PaymentOCRModal: React.FC<PaymentOCRModalProps> = ({
       };
 
       onSubmitReceipt(newReceipt);
-      alert('Comprobante enviado exitosamente a Direccion! Al ser verificado, tu certificado digital se emitira automaticamente.');
+      alert('Comprobante enviado exitosamente a Direccion! Al ser verificado por el Administrador, tu certificado digital se emitira automaticamente.');
     } catch (err) {
       console.error('Error enviando comprobante:', err);
       alert('Error al enviar el comprobante. Por favor intenta de nuevo.');
@@ -209,13 +253,13 @@ export const PaymentOCRModal: React.FC<PaymentOCRModalProps> = ({
                 <span className="text-xs font-bold text-slate-200">
                   {file ? file.name : 'Haz clic aqui para seleccionar tu comprobante'}
                 </span>
-                <span className="text-[10px] text-slate-500 mt-1">Soporta PNG, JPG, JPEG, WEBP o PDF (max 5MB)</span>
+                <span className="text-[10px] text-slate-500 mt-1">Soporta PNG, JPG, JPEG, WEBP o PDF (max 10MB)</span>
                 <input type="file" accept="image/png,image/jpeg,image/jpg,image/webp,application/pdf"
                   onChange={handleFileChange} className="hidden" />
               </label>
               {previewUrl && !previewUrl.includes('application/pdf') && (
-                <div className="mt-3 rounded-xl overflow-hidden border border-slate-800 max-h-40">
-                  <img src={previewUrl} alt="Preview del comprobante" className="w-full h-full object-contain" />
+                <div className="mt-3 rounded-xl overflow-hidden border border-slate-800 max-h-40 flex items-center justify-center p-2 bg-slate-950">
+                  <img src={previewUrl} alt="Preview del comprobante" className="max-h-36 object-contain rounded" />
                 </div>
               )}
             </div>
@@ -226,7 +270,7 @@ export const PaymentOCRModal: React.FC<PaymentOCRModalProps> = ({
               <button type="submit" disabled={submitting}
                 className="px-6 py-3 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-400 hover:to-amber-500 text-white font-extrabold rounded-xl text-xs shadow-xl shadow-amber-500/25 transition-all flex items-center gap-2 cursor-pointer disabled:opacity-50">
                 <Send className="w-4 h-4" />
-                <span>{submitting ? 'Subiendo y Enviando...' : 'Enviar Comprobante & Solicitar Certificado'}</span>
+                <span>{submitting ? 'Enviando Comprobante...' : 'Enviar Comprobante & Solicitar Certificado'}</span>
               </button>
             </div>
           </form>

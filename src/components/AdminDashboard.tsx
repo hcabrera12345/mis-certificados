@@ -679,15 +679,53 @@ export const AdminDashboard: React.FC<AdminDashboardProps> = ({
 
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div className="bg-slate-950 p-4 rounded-2xl border border-slate-800 space-y-3">
-                <span className="text-xs font-bold text-cyan-400 uppercase tracking-wider block">Foto del Comprobante Adjuntado:</span>
-                <div className="w-full h-80 bg-slate-900 rounded-xl overflow-hidden border border-slate-800 flex items-center justify-center p-2">
-                  {inspectingReceipt.receipt_image_url?.includes('application/pdf') ? (
-                    <iframe src={inspectingReceipt.receipt_image_url} className="w-full h-full rounded border-0" title="Comprobante PDF" />
+                <div className="flex items-center justify-between">
+                  <span className="text-xs font-bold text-cyan-400 uppercase tracking-wider block">Foto del Comprobante Adjuntado:</span>
+                  {inspectingReceipt.receipt_image_url && !inspectingReceipt.receipt_image_url.startsWith('blob:') && (
+                    <button
+                      type="button"
+                      onClick={() => {
+                        const win = window.open();
+                        if (win) win.document.write(`<img src="${inspectingReceipt.receipt_image_url}" style="max-width:100%" />`);
+                      }}
+                      className="text-[10px] font-bold text-cyan-400 hover:text-cyan-300 underline"
+                    >
+                      Ver Tamano Real
+                    </button>
+                  )}
+                </div>
+                <div className="w-full h-80 bg-slate-900 rounded-xl overflow-hidden border border-slate-800 flex flex-col items-center justify-center p-2">
+                  {inspectingReceipt.receipt_image_url?.startsWith('blob:') ? (
+                    <div className="text-center p-4 space-y-2">
+                      <AlertTriangle className="w-10 h-10 text-amber-400 mx-auto" />
+                      <p className="text-xs font-bold text-amber-300">Comprobante anterior local (URL Blob)</p>
+                      <p className="text-[10px] text-slate-400">Este comprobante fue enviado con una version anterior. Pide al estudiante volver a subir su foto.</p>
+                    </div>
+                  ) : inspectingReceipt.receipt_image_url?.includes('application/pdf') ? (
+                    <div className="text-center space-y-3 p-4">
+                      <FileText className="w-16 h-16 text-amber-400 mx-auto animate-pulse" />
+                      <div>
+                        <h4 className="text-sm font-bold text-white">Comprobante en Documento PDF</h4>
+                        <p className="text-xs text-slate-400 mt-1">Documento adjuntado por el estudiante</p>
+                      </div>
+                      <a
+                        href={inspectingReceipt.receipt_image_url}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center gap-2 px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs shadow-md transition-all"
+                      >
+                        <Eye className="w-4 h-4" /> Abrir Documento PDF Completo
+                      </a>
+                    </div>
                   ) : (
                     <img
-                      src={inspectingReceipt.receipt_image_url || 'https://images.unsplash.com/photo-1554224155-8d04cb21cd6c?w=400'}
+                      src={inspectingReceipt.receipt_image_url || '/quinto_official_payment_qr.png'}
                       alt="Comprobante Adjuntado"
                       className="w-full h-full object-contain rounded select-none"
+                      onError={(e) => {
+                        e.currentTarget.onerror = null;
+                        e.currentTarget.src = '/quinto_official_payment_qr.png';
+                      }}
                     />
                   )}
                 </div>
